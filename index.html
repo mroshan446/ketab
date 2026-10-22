@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1f6f5c"><link rel="apple-touch-icon" href="icon-192.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>کُتُب</title><link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--tx:#1d2433;--mu:#6b7280;--pr:#1f6f5c;--bd:#e2ded4;--wr:#b42318;--ok:#1f6f5c}
+@media(prefers-color-scheme:dark){:root{--bg:#14181f;--card:#1e242e;--tx:#e8eaee;--mu:#9aa3b2;--pr:#3aa58b;--bd:#2f3744;--wr:#f08a7e;--ok:#3aa58b}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px Vazirmatn,Tahoma,sans-serif;padding-top:env(safe-area-inset-top)}
+header{display:flex;align-items:center;gap:8px;padding:10px 14px}header img{width:34px;height:34px;border-radius:8px}header b{font-size:19px;flex:1}
+nav{display:flex;gap:6px;padding:6px 12px;overflow-x:auto}nav button{flex:1 0 auto;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;white-space:nowrap}nav button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+main{padding:8px 12px 40px;max-width:760px;margin:auto}.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+h3{margin:2px 0 10px;font-size:16px}label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+.row{display:flex;gap:8px;align-items:flex-end}.row>*{flex:1}.fit{flex:0 0 auto!important}
+.btn{padding:10px 14px;border:0;border-radius:8px;background:var(--pr);color:#fff;font:inherit}.btn.sec{background:transparent;color:var(--pr);border:1px solid var(--pr)}.btn.red{background:var(--wr)}a.btn{text-decoration:none;display:inline-block}
+.btn.sm{padding:6px 10px;font-size:13px}
+.item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)}.item:last-child{border:0}.item>div:nth-child(2){flex:1}
+.mu{color:var(--mu);font-size:13px}.bad{color:var(--wr)}.good{color:var(--ok)}.hid{display:none}
+.cv{width:54px;height:76px;border-radius:6px;object-fit:cover;background:var(--bd);flex:0 0 auto}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;z-index:9;padding:16px;overflow:auto}#ov>div{background:var(--card);border-radius:14px;padding:14px;width:100%;max-width:440px}
+</style></head><body>
+<div id="app"></div><div id="ov"><div id="ob"></div></div>
+<script>
+
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dv=(a,b)=>Math.floor(a/b),P=x=>String(x).replace(/\d/g,c=>'۰۱۲۳۴۵۶۷۸۹'[c]);
+function g2j(gy,gm,gd){const g=[0,31,59,90,120,151,181,212,243,273,304,334];let jy=gy<=1600?0:979;gy-=gy<=1600?621:1600;const g2=gm>2?gy+1:gy;let d=365*gy+dv(g2+3,4)-dv(g2+99,100)+dv(g2+399,400)-80+gd+g[gm-1];jy+=33*dv(d,12053);d%=12053;jy+=4*dv(d,1461);d%=1461;if(d>365){jy+=dv(d-1,365);d=(d-1)%365}return[jy,d<186?1+dv(d,31):7+dv(d-186,30),1+(d<186?d%31:(d-186)%30)]}
+const fd=d=>{if(!d)return'—';const[y,m,x]=d.split('-').map(Number),j=g2j(y,m,x);return P(j[0]+'/'+String(j[1]).padStart(2,'0')+'/'+String(j[2]).padStart(2,'0'))};
+const today=()=>new Date().toISOString().slice(0,10);
+const AGES={kid:'کودک (زیر ۱۲)',teen:'نوجوان (۱۲ تا ۱۷)',adult:'بزرگسال (۱۸+)',all:'همه سنین'};
+const ageOpts=(v,all)=>(all?'<option value="">همهٔ رده‌های سنی</option>':'')+Object.keys(AGES).map(k=>`<option value="${k}"${k===v?' selected':''}>${AGES[k]}</option>`).join('');
+
+const PAL=['#2f8f7a','#d9822b','#4a6fa5','#b5527a','#8a8f3c','#7a5ea8'];
+function donut(items){
+  const tot=items.reduce((a,x)=>a+x.v,0);if(!tot)return'<div class="mu">داده‌ای ثبت نشده است</div>';
+  const R=42,C=2*Math.PI*R;let off=0;
+  const arcs=items.filter(x=>x.v>0).map(x=>{const len=x.v/tot*C,t=`<circle r="${R}" cx="60" cy="60" fill="none" stroke="${x.c}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;off+=len;return t}).join('');
+  return `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><svg viewBox="0 0 120 120" width="130" height="130">${arcs}<text x="60" y="66" text-anchor="middle" font-size="18" font-weight="700" fill="currentColor">${P(tot)}</text></svg><div>${items.map(x=>`<div style="margin:4px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${x.c};margin-left:6px"></span>${esc(x.l)}: <b>${P(x.v)}</b> (${P(Math.round(x.v/tot*100))}٪)</div>`).join('')}</div></div>`;
+}
+function bars(items,unit){
+  const mx=Math.max(...items.map(x=>x.v),1);
+  return items.length?items.map((x,i)=>`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(x.l)}</span><b>${P(x.v)} ${unit}</b></div><div style="height:12px;background:var(--bd);border-radius:6px;overflow:hidden"><div style="height:100%;width:${x.v/mx*100}%;background:${PAL[i%PAL.length]};border-radius:6px"></div></div></div>`).join(''):'<div class="mu">داده‌ای ثبت نشده است</div>';
+}
+
+const loadImg=f=>new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.src=URL.createObjectURL(f)});
+async function shrink(f,max){const im=await loadImg(f),s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.8)}
+async function compose(f,tpl){
+  const im=await loadImg(f),W=600,H=800,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  await new Promise(ok=>{const t=new Image();t.onload=()=>{x.drawImage(t,0,0,W,H);ok()};t.onerror=ok;t.src=tpl});
+  const s=Math.min(W*.68/im.width,H*.72/im.height),w=im.width*s,h=im.height*s;
+  x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=24;x.shadowOffsetY=8;x.drawImage(im,(W-w)/2,(H-h)/2,w,h);return c.toDataURL('image/jpeg',.82);
+}
+
+async function vStats(){
+  const S=await api('/api/stats'),box=(t,h)=>`<div class="card"><h3>${t}</h3>${h}</div>`,g=S.gender,a=S.ages;
+  $('#view').innerHTML=`<div class="row" style="margin-bottom:10px">${[['کتاب‌ها',S.totals.books],['اعضا',S.totals.members],['در امانت',S.totals.active],['دیرکرد',S.totals.late]].map(x=>`<div class="card" style="margin:0;text-align:center"><div style="font-size:22px;font-weight:700">${P(x[1])}</div><div class="mu">${x[0]}</div></div>`).join('')}</div>`+
+  box('جنسیت اعضا',donut([{l:'خانم',v:g.f||0,c:PAL[3]},{l:'آقا',v:g.m||0,c:PAL[2]},{l:'نامشخص',v:g.u||0,c:'#9aa3b2'}]))+
+  box('رده‌بندی سنی اعضا',donut([{l:'کودک (زیر ۱۲)',v:a.kid||0,c:PAL[1]},{l:'نوجوان (۱۲ تا ۱۷)',v:a.teen||0,c:PAL[0]},{l:'بزرگسال (۱۸+)',v:a.adult||0,c:PAL[2]},{l:'نامشخص',v:a.u||0,c:'#9aa3b2'}]))+
+  box('اعضایی که بیشترین کتاب را برده‌اند',bars(S.readers,'کتاب'))+box('پرطرفدارترین کتاب‌ها',bars(S.popular,'بار امانت'))+box('بیشترین موضوع‌های کتابخانه',bars(S.topics,'کتاب'))+box('بیشترین اهداکننده‌ها',bars(S.donors,'کتاب'));
+}
+
+/* ===== ذخیره‌سازی روی گوشی ===== */
+const idbP=new Promise((ok,no)=>{const r=indexedDB.open('ketab',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const kvGet=k=>idbP.then(d=>new Promise(o=>{const r=d.transaction('kv').objectStore('kv').get(k);r.onsuccess=()=>o(r.result)}));
+const kvSet=(k,v)=>idbP.then(d=>new Promise(o=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=o}));
+const kvDel=k=>idbP.then(d=>new Promise(o=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=o}));
+const C=['books','users','loans','resv','reviews','sugs'];
+let DB,SNAP,SET={},IMG={},TPL=null;
+const nid=(()=>{let l=0;return()=>{let n=Date.now()*1000+Math.floor(Math.random()*1000);if(n<=l)n=l+1;l=n;return n}})();
+const freshDB=()=>{const d={topics:['رمان','شعر','تاریخی','علمی','مذهبی','کودک و نوجوان','روانشناسی','آموزشی'],tomb:{}};C.forEach(c=>{d[c]=[];d.tomb[c]={}});return d};
+const norm=()=>{DB.topics=DB.topics||[];DB.tomb=DB.tomb||{};C.forEach(c=>{DB[c]=DB[c]||[];DB.tomb[c]=DB.tomb[c]||{}})};
+function snapAll(){SNAP={};C.forEach(c=>{SNAP[c]={};DB[c].forEach(r=>SNAP[c][r.id]=JSON.stringify({...r,upd:0}))})}
+async function loadAll(){
+  DB=await kvGet('db')||freshDB();norm();SET=await kvGet('set')||{};TPL=await kvGet('tpl')||null;
+  const d=await idbP,s=d.transaction('kv').objectStore('kv');
+  const ks=await new Promise(o=>{const r=s.getAllKeys();r.onsuccess=()=>o(r.result)}),vs=await new Promise(o=>{const r=s.getAll();r.onsuccess=()=>o(r.result)});
+  ks.forEach((k,i)=>{if(String(k).startsWith('img:'))IMG[k.slice(4)]=vs[i]});snapAll();
+}
+const saveSet=()=>kvSet('set',SET);
+function commit(){
+  const now=Date.now();
+  C.forEach(c=>{const seen={};DB[c].forEach(r=>{seen[r.id]=1;const s=JSON.stringify({...r,upd:0});if(SNAP[c][r.id]!==s){r.upd=now;SNAP[c][r.id]=s}});for(const id in SNAP[c])if(!seen[id]){DB.tomb[c][id]=now;delete SNAP[c][id]}});
+  kvSet('db',DB);
+}
+/* ===== منطق برنامه ===== */
+const nf=s=>String(s??'').replace(/ي/g,'ی').replace(/ك/g,'ک').trim();
+const full=u=>u?u.first+' '+u.last:'(حذف‌شده)',byId=(a,id)=>a.find(x=>x.id===+id);
+const catOf=a=>a===''||a==null||isNaN(+a)?null:+a<12?'kid':+a<18?'teen':'adult';
+const ad=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+ +n);return x.toISOString().slice(0,10)};
+const lateDays=l=>Math.round((new Date(today()+'T12:00:00')-new Date(l.due+'T12:00:00'))/864e5);
+const bookRow=b=>{const l=DB.loans.find(x=>x.bid===b.id&&!x.ret),rv=DB.reviews.filter(r=>r.bid===b.id);return{...b,cover:IMG[b.id]||null,avail:!l,holder:l?full(byId(DB.users,l.uid)):undefined,rating:rv.length?Math.round(rv.reduce((a,r)=>a+r.rating,0)/rv.length*10)/10:null,rn:rv.length}};
+const loanRow=l=>{const b=byId(DB.books,l.bid),u=byId(DB.users,l.uid);return{...l,bname:b?b.name:'(حذف‌شده)',bcode:b?b.code:'',uname:full(u),phone:u?u.phone:''}};
+function loanCreate(bid,uid,days,force){
+  const b=byId(DB.books,bid),u=byId(DB.users,uid);if(!b||!u)return{err:'کتاب یا عضو پیدا نشد'};
+  if(DB.loans.some(l=>l.bid===bid&&!l.ret))return{err:'این کتاب هم‌اکنون در امانت است'};
+  const c=catOf(u.age);if(!force&&b.age!=='all'&&c&&c!==b.age)return{warn:`این کتاب برای رده سنی «${AGES[b.age]}» است و سن عضو ${u.age} سال است. ادامه می‌دهید؟`};
+  const rv=DB.resv.find(r=>r.bid===bid&&r.st==='ready'&&r.uid!==uid);if(!force&&rv)return{warn:'این کتاب برای '+full(byId(DB.users,rv.uid))+' رزرو شده است. ادامه می‌دهید؟'};
+  const out=today();DB.loans.push({id:nid(),bid,uid,out,due:ad(out,days||14),ret:null,by:SET.name});
+  DB.resv.forEach(r=>{if(r.bid===bid&&r.uid===uid&&r.st!=='done')r.st='done'});return{ok:1};
+}
+function route(m,p,sp,B){
+  const E=(e)=>[400,{error:e}],O=x=>[200,x],W=x=>{commit();return[200,x]};
+  if(p==='/api/topics')return O([...new Set([...DB.topics,...DB.books.map(b=>b.topic)])].filter(Boolean));
+  if(p==='/api/template'){if(m==='POST'){TPL=B.image;kvSet('tpl',TPL);return O({url:TPL})}return O({url:TPL})}
+  if(p==='/api/books'||p.startsWith('/api/books/')){
+    const id=+p.split('/')[3]||0;
+    if(m==='GET'){let L=DB.books.slice().reverse();const q=nf(sp.get('q')),t=sp.get('topic'),a=sp.get('age');
+      if(q)L=L.filter(b=>[b.name,b.author,b.publisher,b.code].some(x=>String(x||'').includes(q)));if(t)L=L.filter(b=>b.topic===t);if(a)L=L.filter(b=>b.age===a);return O(L.map(bookRow))}
+    if(m==='DELETE'){if(DB.loans.some(l=>l.bid===id&&!l.ret))return E('کتاب در امانت است');
+      DB.books=DB.books.filter(b=>b.id!==id);['loans','resv','reviews'].forEach(c=>DB[c]=DB[c].filter(r=>r.bid!==id));delete IMG[id];kvDel('img:'+id);return W({ok:1})}
+    if(!nf(B.name))return E('نام کتاب لازم است');
+    const f={name:nf(B.name),author:nf(B.author),publisher:nf(B.publisher),topic:nf(B.topic),age:AGES[B.age]?B.age:'all',donor:nf(B.donor),summary:String(B.summary||'').trim()};
+    if(f.topic&&!DB.topics.includes(f.topic)&&!DB.books.some(b=>b.topic===f.topic))DB.topics.push(f.topic);
+    const setImg=bid=>{if(B.cover){IMG[bid]=B.cover;kvSet('img:'+bid,B.cover);return Date.now()}return null};
+    if(m==='POST'){
+      let code=nf(B.code);if(!code){let n=DB.books.filter(b=>b.code.startsWith(SET.tag)).length+1;do{code=SET.tag+String(n++).padStart(4,'0')}while(DB.books.some(b=>b.code===code))}
+      if(DB.books.some(b=>b.code===code))return E('این کد قبلاً ثبت شده است');
+      const bid=nid();DB.books.push({id:bid,code,...f,created:today(),imgv:setImg(bid),by:SET.name});return W({id:bid,code});
+    }
+    const b=byId(DB.books,id);Object.assign(b,f);const iv=setImg(id);if(iv)b.imgv=iv;return W({ok:1});
+  }
+  if(p==='/api/members'){
+    if(m==='POST'){const ph=nf(B.phone).replace(/\D/g,''),f=nf(B.first),l=nf(B.last);if(!f||!l)return E('نام و نام خانوادگی لازم است');
+      if(ph&&DB.users.some(u=>u.phone===ph))return E('عضوی با این شماره قبلاً ثبت شده است');
+      DB.users.push({id:nid(),first:f,last:l,age:+B.age||null,gender:B.gender||'',phone:ph,by:SET.name});return W({ok:1})}
+    return O(DB.users.slice().reverse());
+  }
+  if(/^\/api\/members\/\d+$/.test(p)&&m==='PUT'){const u=byId(DB.users,p.split('/')[3]);if(!u)return E('عضو پیدا نشد');const ph=nf(B.phone).replace(/\D/g,''),f=nf(B.first),l=nf(B.last);
+    if(!f||!l)return E('نام و نام خانوادگی لازم است');if(ph&&DB.users.some(x=>x.phone===ph&&x.id!==u.id))return E('این شماره برای عضو دیگری ثبت شده است');
+    Object.assign(u,{first:f,last:l,age:+B.age||null,gender:B.gender||'',phone:ph});return W({ok:1})}
+  if(/^\/api\/members\/\d+\/del$/.test(p)){const id=+p.split('/')[3];if(DB.loans.some(l=>l.uid===id))return E('این عضو سابقهٔ امانت دارد و حذف نمی‌شود');DB.users=DB.users.filter(u=>u.id!==id);DB.resv=DB.resv.filter(r=>r.uid!==id);return W({ok:1})}
+  if(p==='/api/loans'){
+    if(m==='POST'){const r=loanCreate(+B.bid,+B.uid,+B.days,B.force);if(r.err)return E(r.err);if(r.warn)return[409,{warn:r.warn}];return W(r)}
+    let L=DB.loans;if(sp.get('active'))L=L.filter(l=>!l.ret);return O(L.slice().reverse().map(loanRow));
+  }
+  if(/^\/api\/loans\/\d+\/return$/.test(p)){const l=byId(DB.loans,p.split('/')[3]);if(l&&!l.ret){l.ret=today();l.retBy=SET.name;const rs=DB.resv.filter(r=>r.bid===l.bid&&r.st==='wait').sort((a,b)=>a.id-b.id)[0];if(rs)rs.st='ready'}return W({ok:1})}
+  if(p==='/api/resv'){
+    if(m==='POST'){const l=DB.loans.find(x=>x.bid===+B.bid&&!x.ret);if(!l)return E('این کتاب در کتابخانه موجود است؛ مستقیم امانت بدهید');if(l.uid===+B.uid)return E('این کتاب همین الان دست خود این عضو است');
+      if(DB.resv.some(r=>r.bid===+B.bid&&r.uid===+B.uid&&r.st!=='done'))return E('برای این عضو قبلاً رزرو ثبت شده است');DB.resv.push({id:nid(),bid:+B.bid,uid:+B.uid,at:today(),st:'wait',by:SET.name});return W({ok:1})}
+    return O(DB.resv.filter(r=>r.st!=='done').map(r=>{const u=byId(DB.users,r.uid),b=byId(DB.books,r.bid);return{...r,bname:b?b.name:'(حذف‌شده)',uname:full(u),phone:u?u.phone:''}}));
+  }
+  if(/^\/api\/resv\/\d+\/cancel$/.test(p)){const id=+p.split('/')[3];DB.resv=DB.resv.filter(r=>r.id!==id);return W({ok:1})}
+  if(p==='/api/remind'){const t=today(),tm=ad(t,1);return O(DB.loans.filter(l=>!l.ret&&(l.due===tm||l.due<t)).map(l=>{const r=loanRow(l),late=l.due<t;return{...r,late,days:late?lateDays(l):0,text:late?`سلام ${r.uname}، کتاب «${r.bname}» ${lateDays(l)} روز از مهلت بازگشتش گذشته است. لطفاً آن را به کتابخانه بازگردانید.`:`سلام ${r.uname}، یادآوری: فردا مهلت بازگشت کتاب «${r.bname}» است.`}}))}
+  if(p==='/api/reviews'){
+    if(m==='POST'){const rt=+B.rating;if(!byId(DB.books,B.bid)||!byId(DB.users,B.uid))return E('کتاب و عضو را انتخاب کنید');if(!(rt>=1&&rt<=5))return E('امتیاز را انتخاب کنید');
+      if(DB.reviews.some(r=>r.bid===+B.bid&&r.uid===+B.uid))return E('برای این کتاب قبلاً از این عضو نظر ثبت شده است');
+      DB.reviews.push({id:nid(),bid:+B.bid,uid:+B.uid,kind:B.kind==='owned'?'owned':'borrowed',rating:rt,text:String(B.text||'').trim().slice(0,1000),at:today(),by:SET.name});return W({ok:1})}
+    const bid=sp.get('bid');return O(DB.reviews.filter(r=>!bid||r.bid===+bid).slice().reverse().map(r=>{const b=byId(DB.books,r.bid);return{...r,uname:full(byId(DB.users,r.uid)),bname:b?b.name:'(حذف‌شده)'}}));
+  }
+  if(/^\/api\/reviews\/\d+\/del$/.test(p)){const id=+p.split('/')[3];DB.reviews=DB.reviews.filter(r=>r.id!==id);return W({ok:1})}
+  if(p==='/api/sugs'){
+    if(m==='POST'){if(!nf(B.title))return E('نام کتاب را بنویسید');DB.sugs.push({id:nid(),uid:+B.uid||null,title:nf(B.title),author:nf(B.author),at:today(),by:SET.name});return W({ok:1})}
+    return O(DB.sugs.slice().reverse().map(s=>({...s,uname:s.uid?full(byId(DB.users,s.uid)):'—'})));
+  }
+  if(/^\/api\/sugs\/\d+\/del$/.test(p)){const id=+p.split('/')[3];DB.sugs=DB.sugs.filter(s=>s.id!==id);return W({ok:1})}
+  if(p==='/api/stats'){
+    const cnt=(a,f)=>{const o={};a.forEach(x=>{const k=f(x);if(k)o[k]=(o[k]||0)+1});return o},top=(o,n)=>Object.entries(o).map(([l,v])=>({l,v})).sort((a,b)=>b.v-a.v).slice(0,n);
+    const bn=id=>{const b=byId(DB.books,id);return b?b.name:null};
+    return O({totals:{books:DB.books.length,members:DB.users.length,active:DB.loans.filter(l=>!l.ret).length,late:DB.loans.filter(l=>!l.ret&&l.due<today()).length},gender:cnt(DB.users,x=>x.gender==='f'?'f':x.gender==='m'?'m':'u'),ages:cnt(DB.users,x=>catOf(x.age)||'u'),readers:top(cnt(DB.loans,l=>DB.users.some(u=>u.id===l.uid)?full(byId(DB.users,l.uid)):null),5),popular:top(cnt(DB.loans,l=>bn(l.bid)),5),topics:top(cnt(DB.books,b=>b.topic),6),donors:top(cnt(DB.books,b=>b.donor),5)});
+  }
+  return[404,{error:'پیدا نشد'}];
+}
+async function api(p,m='GET',b){const u=new URL(p,'http://x'),[s,j]=route(m,u.pathname,u.searchParams,b||{});if(s>=400&&s!==409)throw new Error(j.error||'خطا');j.__s=s;return j}
+/* ===== ادغام فایل پشتیبان گوشی دیگر ===== */
+function makeBackup(){const imgs={};DB.books.forEach(b=>{if(IMG[b.id])imgs[b.id]=IMG[b.id]});return JSON.stringify({app:'ketab',v:1,at:Date.now(),device:{tag:SET.tag,name:SET.name},data:DB,imgs,tpl:TPL,tplBox:SET.tplBox,tplFit:SET.tplFit})}
+function mergeIn(inc){
+  const d=inc.data,S={add:0,upd:0,del:0,conf:[]},remap={};
+  C.forEach(c=>{d[c]=d[c]||[];d.tomb=d.tomb||{};d.tomb[c]=d.tomb[c]||{}});
+  d.users=d.users.filter(r=>{if(DB.tomb.users[r.id]>=r.upd)return true;if(byId(DB.users,r.id))return true;const m=r.phone&&DB.users.find(x=>x.phone===r.phone);if(m){remap[r.id]=m.id;return false}return true});
+  const rm=r=>{if(r.uid&&remap[r.uid])r.uid=remap[r.uid];return r};
+  C.forEach(c=>{
+    d[c].forEach(r0=>{const r=rm({...r0}),l=byId(DB[c],r.id),t=DB.tomb[c][r.id];if(t&&t>=r.upd)return;
+      if(!l){DB[c].push(r);S.add++;if(c==='books'&&inc.imgs&&inc.imgs[r.id]){IMG[r.id]=inc.imgs[r.id];kvSet('img:'+r.id,inc.imgs[r.id])}}
+      else if(r.upd>l.upd){Object.keys(l).forEach(k=>delete l[k]);Object.assign(l,r);S.upd++;if(c==='books'&&inc.imgs&&inc.imgs[r.id]){IMG[r.id]=inc.imgs[r.id];kvSet('img:'+r.id,inc.imgs[r.id])}}});
+    for(const id in d.tomb[c]){const u=d.tomb[c][id],l=byId(DB[c],id);if(l&&l.upd<=u){DB[c]=DB[c].filter(x=>x.id!==+id);S.del++;if(c==='books'){delete IMG[id];kvDel('img:'+id)}}if(!(DB.tomb[c][id]>=u))DB.tomb[c][id]=u}
+  });
+  if(inc.tpl&&!TPL){TPL=inc.tpl;SET.tplBox=inc.tplBox;SET.tplFit=inc.tplFit;kvSet('tpl',TPL);saveSet()}
+  (d.topics||[]).forEach(t=>{if(!DB.topics.includes(t))DB.topics.push(t)});
+  const seen={};DB.books.slice().sort((a,b)=>a.id-b.id).forEach(b=>{if(seen[b.code]){b.code=b.code+'-'+(inc.device&&inc.device.tag||'2');S.conf.push('کد کتاب «'+b.name+'» تکراری بود و به '+b.code+' تغییر کرد')}seen[b.code]=1});
+  const act={};DB.loans.filter(l=>!l.ret).forEach(l=>{(act[l.bid]=act[l.bid]||[]).push(l)});
+  Object.keys(act).forEach(k=>{if(act[k].length>1){const b=byId(DB.books,k);S.conf.push('کتاب «'+(b?b.name:k)+'» برای چند نفر هم‌زمان امانت ثبت شده است؛ بررسی کنید')}});
+  snapAll();
+  C.forEach(c=>DB[c].forEach(r=>{if(!r.upd){r.upd=Date.now()}}));
+  kvSet('db',DB);return S;
+}
+/* ===== کمکی‌های بیرونی ===== */
+const NAT=window.AndroidBridge;
+function saveOut(name,mime,text,share){
+  if(NAT){NAT.saveFile(name,mime,text,!!share);return}
+  if(share&&navigator.canShare){try{const f=new File([text],name,{type:mime});if(navigator.canShare({files:[f]})){navigator.share({files:[f],title:name}).catch(()=>{});return}}catch(e){}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove();
+}
+const smsHref=(ph,t)=>'sms:'+ph+'?body='+encodeURIComponent(t);
+function csvOut(what){
+  const q=r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','),rows={
+    books:[['کد','نام','نویسنده','ناشر','موضوع','رده سنی','اهداکننده','خلاصه'],...DB.books.map(b=>[b.code,b.name,b.author,b.publisher,b.topic,AGES[b.age],b.donor,b.summary])],
+    members:[['نام','نام خانوادگی','موبایل','سن','جنسیت'],...DB.users.map(u=>[u.first,u.last,u.phone,u.age,u.gender==='f'?'خانم':u.gender==='m'?'آقا':''])],
+    loans:[['کتاب','کد','عضو','موبایل','تاریخ تحویل','مهلت','تاریخ بازگشت','ثبت‌کننده'],...DB.loans.map(l=>{const r=loanRow(l);return[r.bname,r.bcode,r.uname,r.phone,fd(l.out),fd(l.due),l.ret?fd(l.ret):'',l.by||'']})]}[what];
+  saveOut('ketab-'+what+'.csv','text/csv','\uFEFF'+rows.map(q).join('\r\n'),false);
+}
+async function compose(f,tpl){
+  const im=await loadImg(f),W=480,H=640,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  await new Promise(ok=>{const t=new Image();t.onload=()=>{x.drawImage(t,0,0,W,H);ok()};t.onerror=ok;t.src=tpl});
+  const bx=SET.tplBox||{x:.16,y:.14,w:.68,h:.72},X=bx.x*W,Y=bx.y*H,BW=bx.w*W,BH=bx.h*H;
+  x.save();x.beginPath();x.rect(X,Y,BW,BH);x.clip();
+  const s=(SET.tplFit==='cover'?Math.max:Math.min)(BW/im.width,BH/im.height),w=im.width*s,h=im.height*s;
+  x.drawImage(im,X+(BW-w)/2,Y+(BH-h)/2,w,h);x.restore();return c.toDataURL('image/jpeg',.82);
+}
+function boxEditor(){
+  const b=SET.tplBox||{x:.16,y:.14,w:.68,h:.72},el=$('#tpb'),r=$('#tpr');let mode=null,st=null;
+  const draw=()=>{r.style.left=b.x*100+'%';r.style.top=b.y*100+'%';r.style.width=b.w*100+'%';r.style.height=b.h*100+'%'};draw();
+  const pt=e=>{const R=el.getBoundingClientRect();return{x:(e.clientX-R.left)/R.width,y:(e.clientY-R.top)/R.height}};
+  r.onpointerdown=e=>{mode=e.target.id==='tph'?'rs':'mv';st={p:pt(e),b:{...b}};r.setPointerCapture(e.pointerId);e.preventDefault()};
+  r.onpointermove=e=>{if(!mode)return;const p=pt(e),dx=p.x-st.p.x,dy=p.y-st.p.y;
+    if(mode==='mv'){b.x=Math.min(1-b.w,Math.max(0,st.b.x+dx));b.y=Math.min(1-b.h,Math.max(0,st.b.y+dy))}
+    else{b.w=Math.min(1-b.x,Math.max(.1,st.b.w+dx));b.h=Math.min(1-b.y,Math.max(.1,st.b.h+dy))}draw()};
+  r.onpointerup=()=>{mode=null};return b;
+}
+/* ===== رابط ===== */
+let TAB='books',COVER=null;
+const go=async f=>{try{return await f()}catch(e){if(e&&e.message)alert(e.message)}};
+function ov(h){$('#ob').innerHTML=h;$('#ov').style.display='flex'}function cov(){$('#ov').style.display='none'}
+$('#ov').onclick=e=>{if(e.target.id==='ov')cov()};
+const on=(root,attr,fn)=>root.querySelectorAll('['+attr+']').forEach(x=>x.onclick=()=>fn(x.getAttribute(attr)));
+const genTag=()=>{const L='ABCDEFGHJKLMNPQRSTUVWXYZ';return L[Math.floor(Math.random()*L.length)]+L[Math.floor(Math.random()*L.length)]};
+async function boot(){await loadAll();if(!SET.name)return setup();if(SET.pin)return lock();shell()}
+function setup(){
+  $('#app').innerHTML=`<main><div class="card" style="text-align:center;margin-top:40px"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K" width="72" height="72" style="border-radius:16px"><h2 style="margin:8px 0 2px">کُتُب</h2><div class="mu">برای این گوشی یک نام کاربری انتخاب کنید.<br>اگر برنامه روی چند گوشی نصب می‌شود، نام هر گوشی باید متفاوت باشد (مثلاً «کتابدار ۱» و «کتابدار ۲»).</div><input id="un" placeholder="نام کاربری این گوشی" style="margin-top:12px"><button class="btn" id="us" style="width:100%;margin-top:12px">ادامه</button></div></main>`;
+  $('#us').onclick=()=>{const n=$('#un').value.trim();if(!n)return alert('نام کاربری را بنویسید');SET.name=n;SET.tag=SET.tag||genTag();saveSet();boot()};
+}
+function lock(){
+  $('#app').innerHTML=`<main><div class="card" style="text-align:center;margin-top:60px"><h3>رمز قفل را وارد کنید</h3><input id="pn" type="password" inputmode="numeric" maxlength="4" style="text-align:center;font-size:22px"><button class="btn" id="pb" style="width:100%;margin-top:12px">ورود</button></div></main>`;
+  $('#pb').onclick=()=>{if($('#pn').value===SET.pin)shell();else{alert('رمز اشتباه است');$('#pn').value=''}};
+}
+function banner(){
+  const ready=DB.resv.filter(r=>r.st==='ready').length,late=DB.loans.filter(l=>!l.ret&&l.due<today()).length,bk=(DB.books.length+DB.users.length)&&(!SET.lastBackup||Date.now()-SET.lastBackup>7*864e5);
+  return (ready?`<div class="card" style="border-color:var(--ok)" onclick="TAB='loans';shell()">📣 ${P(ready)} کتاب رزروشده آمادهٔ تحویل است</div>`:'')+(late?`<div class="card" style="border-color:var(--wr)" onclick="TAB='loans';shell()">⚠️ ${P(late)} کتاب دیرکرد دارد</div>`:'')+(bk?`<div class="card" style="border-color:var(--wr)" onclick="TAB='settings';shell()">💾 مدتی است پشتیبان نگرفته‌اید؛ همین‌جا بزنید</div>`:'');
+}
+function shell(){
+  const tabs=[['books','کتاب‌ها'],['members','اعضا'],['loans','امانات'],['hist','تاریخچه'],['reviews','نظرات'],['stats','آمار'],['settings','تنظیمات و پشتیبان']];
+  $('#app').innerHTML=`<header><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K"><b>کُتُب</b><span class="mu">👤 ${esc(SET.name)}</span></header><nav>${tabs.map(t=>`<button data-t="${t[0]}" class="${t[0]===TAB?'on':''}">${t[1]}</button>`).join('')}</nav><main><div id="bnr">${banner()}</div><div id="view"></div></main>`;
+  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;shell()});
+  ({books:vBooks,members:vMembers,loans:vLoans,hist:vHist,reviews:vReviews,stats:vStats,settings:vSettings})[TAB]();
+}
+const stars=b=>b.rn?`<span class="good">⭐ ${P(b.rating)} (${P(b.rn)} نظر)</span> · `:'';
+const shareBook=b=>{const t=`📚 ${b.name}\n✍️ ${b.author||'—'}${b.publisher?'\n🏢 '+b.publisher:''}\n🏷 ${b.topic||'—'} · ${AGES[b.age]}${b.summary?'\n\n'+b.summary:''}\n\nکد کتاب: ${b.code}`;if(NAT){NAT.shareText(t);return}if(navigator.share){navigator.share({text:t}).catch(()=>{});return}const show=()=>{ov(`<h3>متن معرفی کتاب</h3><div class="mu">متن را انتخاب و کپی کنید:</div><textarea id="shT" rows="9" readonly>${esc(t)}</textarea><button class="btn sec" style="width:100%;margin-top:8px" onclick="cov()">بستن</button>`);$('#shT').select()};try{navigator.clipboard.writeText(t).then(()=>alert('متن کتاب کپی شد'),show)}catch(e){show()}};
+async function vBooks(){
+  const v=$('#view'),tp=await api('/api/topics');
+  v.innerHTML=`<div class="card"><input id="s" placeholder="جستجو: نام کتاب، نویسنده، ناشر یا کد"><div class="row" style="margin-top:8px"><select id="ft"><option value="">همهٔ موضوعات</option>${tp.map(t=>`<option>${esc(t)}</option>`).join('')}</select><select id="fa">${ageOpts('',1)}</select></div></div><button class="btn" id="add" style="width:100%;margin-bottom:10px">+ افزودن کتاب</button><div class="card" id="bl"></div>`;
+  const load=()=>go(async()=>{
+    const p=new URLSearchParams({q:$('#s').value,topic:$('#ft').value,age:$('#fa').value});[...p.keys()].forEach(k=>{if(!p.get(k))p.delete(k)});
+    const L=await api('/api/books?'+p),by=id=>L.find(b=>b.id==id);
+    $('#bl').innerHTML=L.map(b=>`<div class="item"><img class="cv" src="${b.cover||'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K'}"><div><b>${esc(b.name)}</b><div class="mu">${esc(b.author||'')}${b.publisher?' · '+esc(b.publisher):''}</div><div class="mu">${esc(b.topic||'بدون موضوع')} · ${AGES[b.age]} · ${esc(b.code)}${b.donor?' · اهداکننده: '+esc(b.donor):''}</div>${b.summary?`<div class="mu">${esc(b.summary.slice(0,90))}${b.summary.length>90?'…':''}</div>`:''}<div>${stars(b)}${b.avail?'<span class="good">موجود</span>':'<span class="bad">در امانت: '+esc(b.holder)+'</span>'}</div>
+    <div style="margin-top:6px"><button class="btn sec sm" data-n="${b.id}">نظرات</button> <button class="btn sec sm" data-e="${b.id}">ویرایش</button> <button class="btn sec sm" data-h="${b.id}">تاریخچه</button> <button class="btn sec sm" data-s="${b.id}">اشتراک‌گذاری</button> ${b.avail?'':`<button class="btn sec sm" data-v="${b.id}">رزرو</button> `}<button class="btn sec sm" data-d="${b.id}">حذف</button></div></div></div>`).join('')||'<div class="mu">کتابی پیدا نشد</div>';
+    const bl=$('#bl');
+    on(bl,'data-n',id=>showReviews(+id,by(id)));on(bl,'data-e',id=>bookForm(by(id),tp));on(bl,'data-s',id=>shareBook(by(id)));on(bl,'data-h',id=>{HIST={mode:'b',q:by(id).code};TAB='hist';shell()});
+    on(bl,'data-d',id=>confirm('کتاب حذف شود؟')&&go(async()=>{await api('/api/books/'+id,'DELETE');shell()}));
+    on(bl,'data-v',id=>reserveForm(+id,by(id)));
+  });
+  ['s','ft','fa'].forEach(i=>$('#'+i).oninput=load);load();$('#add').onclick=()=>bookForm(null,tp);
+}
+const memList=async()=>{const m=await api('/api/members');return{m,html:`<datalist id="mm">${m.map(x=>`<option value="${esc(x.first+' '+x.last)}${x.phone?' — '+esc(x.phone):''}">`).join('')}</datalist>`,find:s=>m.find(x=>s.trim()===x.first+' '+x.last+(x.phone?' — '+x.phone:'')||(x.phone&&x.phone===s.trim())||s.trim()===x.first+' '+x.last)}};
+async function reserveForm(id,b){
+  const M=await memList();
+  ov(`<h3>رزرو «${esc(b.name)}»</h3><div class="mu">کتاب الان پیش ${esc(b.holder)} است. عضو متقاضی:</div><input id="rm" list="mm" placeholder="نام یا موبایل عضو">${M.html}<div class="row" style="margin-top:12px"><button class="btn" id="rv">ثبت رزرو</button><button class="btn sec" onclick="cov()">انصراف</button></div>`);
+  $('#rv').onclick=()=>go(async()=>{const m=M.find($('#rm').value);if(!m)return alert('عضو را از فهرست انتخاب کنید (ابتدا در تنظیمات ثبت شود)');await api('/api/resv','POST',{bid:id,uid:m.id});cov();alert('رزرو ثبت شد؛ وقتی کتاب برگردد در برنامه خبر می‌دهد');shell()});
+}
+async function showReviews(id,b){
+  const R=await api('/api/reviews?bid='+id);
+  ov(`<h3>نظرات: ${esc(b.name)}</h3>${R.map(r=>`<div class="item"><div><b>${'⭐'.repeat(r.rating)}</b> <span class="mu">${esc(r.uname)} · ${r.kind==='owned'?'کتاب را خودش داشت و خواند':'از کتابخانه امانت گرفت و خواند'}</span><div>${esc(r.text)}</div></div></div>`).join('')||'<div class="mu">هنوز نظری ثبت نشده است. از تب «نظرات» ثبت کنید.</div>'}<button class="btn sec" style="width:100%;margin-top:8px" onclick="cov()">بستن</button>`);
+}
+async function bookForm(b,tp){
+  COVER=null;const e=!!b;b=b||{};
+  ov(`<h3>${e?'ویرایش کتاب':'افزودن کتاب'}</h3>${e?'':`<label>کد یکتا (خالی = خودکار)</label><input id="bc">`}
+  <label>نام کتاب</label><input id="bn" value="${esc(b.name)}"><div class="row"><div><label>نویسنده</label><input id="ba" value="${esc(b.author)}"></div><div><label>ناشر</label><input id="bp" value="${esc(b.publisher)}"></div></div>
+  <div class="row"><div><label>موضوع</label><select id="bt">${tp.map(t=>`<option${t===b.topic?' selected':''}>${esc(t)}</option>`).join('')}<option value="__n">➕ موضوع جدید</option></select></div><div><label>رده سنی</label><select id="bg">${ageOpts(b.age||'all')}</select></div></div>
+  <input id="btn" class="hid" placeholder="نام موضوع جدید" style="margin-top:6px"><label>اهداکننده</label><input id="bd" value="${esc(b.donor)}">
+  <label>خلاصه / توضیح</label><textarea id="bs" rows="4">${esc(b.summary)}</textarea>
+  <label>تصویر کتاب</label><input id="bi" type="file" accept="image/*">${TPL?'<label style="display:flex;gap:6px;align-items:center"><input id="ut" type="checkbox" checked style="width:auto"> قرار دادن روی قالب پس‌زمینه</label>':''}<img id="pv" class="hid" style="width:90px;margin-top:8px;border-radius:6px">
+  <div class="row" style="margin-top:12px"><button class="btn" id="bv">ذخیره</button><button class="btn sec" onclick="cov()">انصراف</button></div>`);
+  $('#bt').onchange=()=>$('#btn').classList.toggle('hid',$('#bt').value!=='__n');
+  $('#bi').onchange=ev=>go(async()=>{const f=ev.target.files[0];if(!f)return;COVER=$('#ut')&&$('#ut').checked?await compose(f,TPL):await shrink(f,420);$('#pv').src=COVER;$('#pv').classList.remove('hid')});
+  $('#bv').onclick=()=>go(async()=>{
+    let t=$('#bt').value;if(t==='__n')t=$('#btn').value;
+    const d={name:$('#bn').value,author:$('#ba').value,publisher:$('#bp').value,topic:t,age:$('#bg').value,donor:$('#bd').value,summary:$('#bs').value,cover:COVER};
+    if(e)await api('/api/books/'+b.id,'PUT',d);else{d.code=$('#bc').value;await api('/api/books','POST',d)}
+    cov();shell();
+  });
+}
+/* امانت و بازگشت */
+async function withForce(fn,done){const r=await fn(false);if(r.__s===409){if(confirm('⚠️ '+r.warn))await fn(true);else return}done()}
+async function vLoans(){
+  const v=$('#view'),[books,M,loans,rsv,rem]=await Promise.all([api('/api/books'),memList(),api('/api/loans?active=1'),api('/api/resv'),api('/api/remind')]);
+  const late=l=>l.due<today(),ready=rsv.filter(r=>r.st==='ready');
+  v.innerHTML=`<div class="card"><h3>رفت کتاب (ثبت امانت)</h3><label>کتاب (کد یا نام)</label><input id="lb" list="bk" placeholder="کد یا نام کتاب"><datalist id="bk">${books.filter(b=>b.avail).map(b=>`<option value="${esc(b.code)} — ${esc(b.name)}">`).join('')}</datalist>
+  <label>عضو (نام یا موبایل)</label><input id="lm" list="mm">${M.html}<div class="row"><div><label>مهلت (روز)</label><input id="ld" type="number" value="14"></div><button class="btn" id="ls">ثبت امانت</button></div></div>
+  <div class="card"><h3>بازگشت کتاب</h3><input id="rc" list="rk" placeholder="کد یا نام کتاب"><datalist id="rk">${loans.map(l=>`<option value="${esc(l.bcode)} — ${esc(l.bname)}">`).join('')}</datalist><div id="ri" style="margin-top:8px"></div></div>
+  ${ready.length?`<div class="card" style="border-color:var(--ok)"><h3 class="good">📣 رزروهای آمادهٔ تحویل</h3>${ready.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}</div></div><div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,'سلام '+r.uname+'، کتاب «'+r.bname+'» که رزرو کرده بودید در کتابخانه آماده تحویل است.')}">پیامک</a> `:''}<button class="btn sec sm" data-c="${r.id}">لغو</button></div></div>`).join('')}</div>`:''}
+  ${rem.length?`<div class="card"><h3>🔔 یادآوری‌ها (فردا یا دیرکرد)</h3>${rem.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${r.late?'<span class="bad">'+P(r.days)+' روز تاخیر</span>':'مهلت فردا'}</div></div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,r.text)}">پیامک</a>`:''}</div>`).join('')}</div>`:''}
+  <div class="card"><h3>کتاب‌های در امانت (${P(loans.length)})</h3>${loans.map(l=>`<div class="item"><div><b>${esc(l.bname)}</b><div class="mu">${esc(l.uname)} · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: <span class="${late(l)?'bad':''}">${fd(l.due)}${late(l)?' ⚠️ تاخیر':''}</span>${l.by?'<br>ثبت‌کننده: '+esc(l.by):''}</div></div><button class="btn sec sm" data-b="${l.id}">بازگشت</button></div>`).join('')||'<div class="mu">کتابی در امانت نیست</div>'}</div>
+  ${rsv.some(r=>r.st==='wait')?`<div class="card"><h3>رزروهای در انتظار</h3>${rsv.filter(r=>r.st==='wait').map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}</div></div><button class="btn sec sm" data-c="${r.id}">لغو</button></div>`).join('')}</div>`:''}`;
+  $('#ls').onclick=()=>go(async()=>{
+    const s=$('#lb').value.trim(),b=books.find(x=>s===x.code+' — '+x.name||x.code===s),m=M.find($('#lm').value);
+    if(!b||!m)return alert('کتاب و عضو را از فهرست انتخاب کنید (عضو باید ابتدا در تنظیمات ثبت شده باشد)');
+    await withForce(f=>api('/api/loans','POST',{bid:b.id,uid:m.m?m.id:m.id,days:+$('#ld').value,force:f}),()=>shell());
+  });
+  const rc=()=>{const s=$('#rc').value.trim(),l=loans.find(x=>s===x.bcode+' — '+x.bname||x.bcode===s);
+    $('#ri').innerHTML=!s?'':!l?'<span class="mu">این کتاب در امانت نیست یا پیدا نشد</span>':`<div class="mu"><b>${esc(l.bname)}</b><br>تحویل‌گیرنده: <b>${esc(l.uname)}</b> · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: ${fd(l.due)}<br>تاریخ بازگشت: <b>${fd(today())}</b> ${late(l)?'<span class="bad">⚠️ '+P(lateDays(l))+' روز تاخیر</span>':'<span class="good">در مهلت</span>'}</div><button class="btn red" id="rb" style="width:100%;margin-top:8px">ثبت بازگشت کتاب</button>`;
+    if(l)$('#rb').onclick=()=>go(async()=>{await api(`/api/loans/${l.id}/return`,'POST');shell()})};
+  $('#rc').oninput=rc;
+  on(v,'data-b',id=>go(async()=>{await api(`/api/loans/${id}/return`,'POST');shell()}));
+  on(v,'data-c',id=>go(async()=>{await api(`/api/resv/${id}/cancel`,'POST');shell()}));
+}
+/* نظرات و پیشنهادها */
+async function vReviews(){
+  const [books,M,rv,sg]=await Promise.all([api('/api/books'),memList(),api('/api/reviews'),api('/api/sugs')]);
+  $('#view').innerHTML=`<div class="card"><h3>ثبت نظر و امتیاز یک عضو</h3><label>کتاب</label><input id="vb" list="vbk" placeholder="کد یا نام کتاب"><datalist id="vbk">${books.map(b=>`<option value="${esc(b.code)} — ${esc(b.name)}">`).join('')}</datalist>
+  <label>عضو</label><input id="vm" list="mm">${M.html}<label>وضعیت</label><select id="vk"><option value="borrowed">کتاب را از کتابخانه امانت گرفت و خواند</option><option value="owned">کتاب را خودش داشت و خواند</option></select>
+  <label>امتیاز</label><select id="vr"><option value="5">⭐⭐⭐⭐⭐ عالی</option><option value="4">⭐⭐⭐⭐ خوب</option><option value="3">⭐⭐⭐ متوسط</option><option value="2">⭐⭐ ضعیف</option><option value="1">⭐ بد</option></select><label>نظر</label><textarea id="vt" rows="3"></textarea><button class="btn" id="vs" style="width:100%;margin-top:8px">ثبت نظر</button></div>
+  <div class="card"><h3>نظرها (${P(rv.length)})</h3>${rv.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b> ${'⭐'.repeat(r.rating)}<div class="mu">${esc(r.uname)} · ${r.kind==='owned'?'کتاب را خودش داشت':'از کتابخانه امانت گرفت'}</div><div>${esc(r.text)}</div></div><button class="btn sec sm" data-x="${r.id}">حذف</button></div>`).join('')||'<div class="mu">نظری ثبت نشده است</div>'}</div>
+  <div class="card"><h3>پیشنهاد خرید کتاب</h3><input id="sm" list="mm" placeholder="عضو پیشنهاددهنده (اختیاری)"><input id="st" placeholder="نام کتاب" style="margin-top:6px"><input id="sa" placeholder="نویسنده (اختیاری)" style="margin-top:6px"><button class="btn" id="sb" style="width:100%;margin-top:8px">ثبت پیشنهاد</button>${sg.map(s=>`<div class="item"><div><b>${esc(s.title)}</b><div class="mu">${esc(s.author||'')} · ${esc(s.uname)} · ${fd(s.at)}</div></div><button class="btn sec sm" data-s="${s.id}">حذف</button></div>`).join('')}</div>`;
+  const v=$('#view');
+  $('#vs').onclick=()=>go(async()=>{const s=$('#vb').value.trim(),b=books.find(x=>s===x.code+' — '+x.name||x.code===s),m=M.find($('#vm').value);if(!b||!m)return alert('کتاب و عضو را از فهرست انتخاب کنید');await api('/api/reviews','POST',{bid:b.id,uid:m.id,kind:$('#vk').value,rating:+$('#vr').value,text:$('#vt').value});shell()});
+  $('#sb').onclick=()=>go(async()=>{const m=$('#sm').value.trim()?M.find($('#sm').value):null;await api('/api/sugs','POST',{uid:m?m.id:null,title:$('#st').value,author:$('#sa').value});shell()});
+  on(v,'data-x',id=>confirm('حذف شود؟')&&go(async()=>{await api(`/api/reviews/${id}/del`,'POST');shell()}));on(v,'data-s',id=>go(async()=>{await api(`/api/sugs/${id}/del`,'POST');shell()}));
+}
+/* اعضا */
+const gTxt=x=>x.gender==='f'?'خانم':x.gender==='m'?'آقا':'جنسیت نامشخص';
+async function vMembers(){
+  const v=$('#view'),[m,loans]=await Promise.all([api('/api/members'),api('/api/loans?active=1')]);
+  v.innerHTML=`<div class="card"><h3>افزودن عضو</h3><div class="row"><div><label>نام</label><input id="mf"></div><div><label>نام خانوادگی</label><input id="ml"></div></div><div class="row"><div><label>سن</label><input id="ma" type="number" inputmode="numeric"></div><div><label>جنسیت</label><select id="mg"><option value="">—</option><option value="f">خانم</option><option value="m">آقا</option></select></div></div><label>شمارهٔ موبایل</label><input id="mp" inputmode="tel"><button class="btn" id="ma2" style="width:100%;margin-top:10px">افزودن عضو</button></div>
+  <div class="card"><h3>اعضای کتابخانه (${P(m.length)})</h3><input id="ms" placeholder="جستجوی نام یا موبایل"><div id="mlst"></div></div>`;
+  const draw=()=>{const q=nf($('#ms').value),L=m.filter(x=>!q||(x.first+' '+x.last).includes(q)||String(x.phone||'').includes(q));
+    $('#mlst').innerHTML=L.map(x=>{const c=loans.filter(l=>l.uid===x.id);return `<div class="item"><div><b>${esc(x.first+' '+x.last)}</b><div class="mu">${gTxt(x)} · ${x.age?'سن '+P(x.age):'سن نامشخص'} · ${esc(x.phone||'بدون شماره')}</div><div class="mu ${c.length?'bad':'good'}">${c.length?'کتاب‌های در دست: '+c.map(l=>esc(l.bname)+(l.due<today()?' ⚠️':'')).join('، '):'کتابی در دست ندارد'}</div><div style="margin-top:6px"><button class="btn sec sm" data-h="${x.id}">تاریخچه</button> <button class="btn sec sm" data-e="${x.id}">ویرایش</button> <button class="btn sec sm" data-d="${x.id}">حذف</button></div></div></div>`}).join('')||'<div class="mu">عضوی پیدا نشد</div>';
+    const r=$('#mlst'),by=id=>m.find(x=>x.id==id);
+    on(r,'data-h',id=>{HIST={mode:'m',q:by(id).first+' '+by(id).last};TAB='hist';shell()});on(r,'data-e',id=>memberForm(by(id)));
+    on(r,'data-d',id=>confirm('عضو حذف شود؟')&&go(async()=>{await api(`/api/members/${id}/del`,'POST');shell()}));};
+  $('#ms').oninput=draw;draw();
+  $('#ma2').onclick=()=>go(async()=>{await api('/api/members','POST',{first:$('#mf').value,last:$('#ml').value,age:$('#ma').value,gender:$('#mg').value,phone:$('#mp').value});shell()});
+}
+function memberForm(x){
+  ov(`<h3>ویرایش عضو</h3><div class="row"><div><label>نام</label><input id="ef" value="${esc(x.first)}"></div><div><label>نام خانوادگی</label><input id="el" value="${esc(x.last)}"></div></div><div class="row"><div><label>سن</label><input id="ea" type="number" value="${esc(x.age||'')}"></div><div><label>جنسیت</label><select id="eg"><option value="">—</option><option value="f"${x.gender==='f'?' selected':''}>خانم</option><option value="m"${x.gender==='m'?' selected':''}>آقا</option></select></div></div><label>شمارهٔ موبایل</label><input id="ep" value="${esc(x.phone||'')}"><div class="row" style="margin-top:12px"><button class="btn" id="es">ذخیره</button><button class="btn sec" onclick="cov()">انصراف</button></div>`);
+  $('#es').onclick=()=>go(async()=>{await api('/api/members/'+x.id,'PUT',{first:$('#ef').value,last:$('#el').value,age:$('#ea').value,gender:$('#eg').value,phone:$('#ep').value});cov();shell()});
+}
+/* تاریخچه */
+let HIST={mode:'b',q:''};
+async function vHist(){
+  const [books,mem,loans]=await Promise.all([api('/api/books'),api('/api/members'),api('/api/loans')]);
+  $('#view').innerHTML=`<div class="card"><select id="hm"><option value="b">تاریخچهٔ کتاب‌ها (الان پیش کیست؟)</option><option value="m">تاریخچهٔ اعضا (چه کتاب‌هایی گرفته؟)</option></select><input id="hq" placeholder="جستجوی نام یا کد" style="margin-top:8px"></div><div id="hl"></div>`;
+  $('#hm').value=HIST.mode;$('#hq').value=HIST.q;
+  const line=(l,who)=>`<div class="mu">${who} — از ${fd(l.out)} ${l.ret?'تا '+fd(l.ret)+(l.ret>l.due?' <span class="bad">(با تاخیر)</span>':''):'(هنوز بازنگشته'+(l.due<today()?' — <span class="bad">'+P(lateDays(l))+' روز تاخیر</span>':'')+')'}${l.by?' · ثبت: '+esc(l.by):''}</div>`;
+  const draw=()=>{HIST={mode:$('#hm').value,q:$('#hq').value};const q=nf(HIST.q);let h='';
+    if(HIST.mode==='b')books.filter(b=>!q||b.name.includes(q)||b.code.includes(q)).forEach(b=>{const ls=loans.filter(l=>l.bid===b.id),a=ls.find(l=>!l.ret);
+      h+=`<div class="card"><b>${esc(b.name)}</b> <span class="mu">${esc(b.code)}</span><div style="margin:4px 0">${a?'<b class="bad">امانت: '+esc(a.uname)+(a.due<today()?' ⚠️ '+P(lateDays(a))+' روز تاخیر':'')+'</b>':'<b class="good">در کتابخانه</b>'}</div>${ls.map(l=>line(l,esc(l.uname))).join('')||'<div class="mu">تاکنون امانت داده نشده</div>'}</div>`});
+    else mem.filter(x=>!q||(x.first+' '+x.last).includes(q)||String(x.phone||'').includes(q)).forEach(x=>{const ls=loans.filter(l=>l.uid===x.id),cur=ls.filter(l=>!l.ret);
+      h+=`<div class="card"><b>${esc(x.first+' '+x.last)}</b> <span class="mu">${esc(x.phone||'')}</span><div style="margin:4px 0">${cur.length?'<b class="bad">اکنون: '+cur.map(l=>esc(l.bname)).join('، ')+'</b>':'<b class="good">کتابی در دست ندارد</b>'}</div>${ls.map(l=>line(l,esc(l.bname))).join('')||'<div class="mu">سابقه‌ای ندارد</div>'}</div>`});
+    $('#hl').innerHTML=h||'<div class="card mu">موردی پیدا نشد</div>'};
+  $('#hm').onchange=draw;$('#hq').oninput=draw;draw();
+}
+/* تنظیمات و پشتیبان */
+async function vSettings(){
+  const m=await api('/api/members'),v=$('#view');
+  v.innerHTML=`<div class="card"><h3>این گوشی</h3><label>نام کاربری (برای هر گوشی متفاوت)</label><div class="row"><input id="un" value="${esc(SET.name)}"><button class="btn fit" id="us">ذخیره</button></div><div class="mu" style="margin-top:6px">شناسهٔ گوشی: ${esc(SET.tag)} (در کد کتاب‌های خودکار استفاده می‌شود)</div>
+  <label>رمز قفل ۴ رقمی (اختیاری؛ خالی = بدون قفل)</label><div class="row"><input id="pn" inputmode="numeric" maxlength="4" value="${esc(SET.pin||'')}"><button class="btn fit" id="ps">ذخیره</button></div></div>
+  <div class="card"><h3>💾 پشتیبان‌گیری و هماهنگ‌سازی گوشی‌ها</h3><div class="mu" style="margin-bottom:8px">«ساخت فایل پشتیبان» همهٔ اطلاعات را در یک فایل می‌گذارد و برای ارسال به ایتا یا هر برنامهٔ دیگر آماده می‌کند. در گوشی دیگر «افزودن فایل پشتیبان» را بزنید تا اطلاعات با هم ادغام شوند (اطلاعات قبلی پاک نمی‌شود).</div>
+  <button class="btn" id="bk" style="width:100%">ساخت و ارسال فایل پشتیبان</button><label style="margin-top:10px">افزودن فایل پشتیبان گوشی دیگر</label><input id="rf" type="file" accept=".json,application/json"></div>
+  <div class="card"><h3>قالب پس‌زمینهٔ جلد کتاب</h3><label>تصویر قالب (جدید یا جایگزین)</label><input id="tf" type="file" accept="image/*">${TPL?`<div class="mu" style="margin-top:8px">کادر را با انگشت جابه‌جا کنید و از دایرهٔ سبز گوشه، اندازه‌اش را تغییر دهید. عکس کتاب داخل همین کادر قرار می‌گیرد.</div><div id="tpb" style="position:relative;width:min(100%,260px);aspect-ratio:3/4;margin:8px auto;direction:ltr;background:var(--bd);border-radius:8px;overflow:hidden"><img src="${TPL}" style="width:100%;height:100%;object-fit:fill;display:block;pointer-events:none"><div id="tpr" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.35);touch-action:none;cursor:move"><div id="tph" style="position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:#1f6f5c;border:2px solid #fff"></div></div></div><label>نحوهٔ قرار گرفتن عکس در کادر</label><select id="tfit"><option value="contain"${SET.tplFit!=='cover'?' selected':''}>کامل داخل کادر جا بگیرد (برش نخورد)</option><option value="cover"${SET.tplFit==='cover'?' selected':''}>کادر را کاملاً پر کند (ممکن است کمی برش بخورد)</option></select><button class="btn" id="tb" style="width:100%;margin-top:8px">ذخیرهٔ کادر</button>`:'<div class="mu" style="margin-top:6px">ابتدا یک تصویر قالب انتخاب کنید؛ بعد می‌توانید کادر را مشخص کنید.</div>'}</div>
+  <div class="card"><h3>خروجی اکسل (CSV)</h3><div class="row"><button class="btn sec" data-x="books">کتاب‌ها</button><button class="btn sec" data-x="members">اعضا</button><button class="btn sec" data-x="loans">امانت‌ها</button></div></div>
+  `;
+  $('#us').onclick=()=>{const n=$('#un').value.trim();if(!n)return alert('نام کاربری خالی نباشد');SET.name=n;saveSet();alert('ذخیره شد');shell()};
+  $('#ps').onclick=()=>{const p=$('#pn').value.trim();if(p&&!/^\d{4}$/.test(p))return alert('رمز باید ۴ رقم باشد');SET.pin=p;saveSet();alert(p?'رمز قفل فعال شد':'قفل برداشته شد')};
+  $('#bk').onclick=()=>{SET.lastBackup=Date.now();saveSet();saveOut('ketab-backup-'+SET.tag+'-'+today()+'.json','application/json',makeBackup(),true)};
+  $('#rf').onchange=ev=>go(async()=>{const f=ev.target.files[0];if(!f)return;let inc;try{inc=JSON.parse(await f.text())}catch(e){return alert('فایل معتبر نیست')}
+    if(inc.app!=='ketab'||!inc.data)return alert('این فایل پشتیبان کُتُب نیست');
+    const same=inc.device&&inc.device.name===SET.name&&inc.device.tag!==SET.tag;
+    if(!confirm('اطلاعات فایل (از گوشی «'+(inc.device&&inc.device.name||'؟')+'») با اطلاعات این گوشی ادغام شود؟'+(same?'\n⚠️ نام کاربری آن گوشی با این گوشی یکی است؛ بهتر است نام یکی را عوض کنید.':'')))return;
+    const S=mergeIn(inc);alert(`ادغام انجام شد.\nجدید: ${P(S.add)} · به‌روزشده: ${P(S.upd)} · حذف‌شده: ${P(S.del)}`+(S.conf.length?'\n\n⚠️ نیاز به بررسی:\n'+S.conf.join('\n'):''));shell()});
+  $('#tf').onchange=ev=>go(async()=>{const f=ev.target.files[0];if(!f)return;await api('/api/template','POST',{image:await shrink(f,640)});shell()});
+  if(TPL){const fb=boxEditor();$('#tb').onclick=()=>{SET.tplBox={x:+fb.x.toFixed(4),y:+fb.y.toFixed(4),w:+fb.w.toFixed(4),h:+fb.h.toFixed(4)};SET.tplFit=$('#tfit').value;saveSet();alert('کادر ذخیره شد')}}
+  on(v,'data-x',csvOut);
+}
+boot();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+</script></body></html>

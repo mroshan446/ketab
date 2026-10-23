@@ -140,7 +140,9 @@ function route(m,p,sp,B){
     return O(DB.resv.filter(r=>r.st!=='done').map(r=>{const u=byId(DB.users,r.uid),b=byId(DB.books,r.bid);return{...r,bname:b?b.name:'(حذف‌شده)',uname:full(u),phone:u?u.phone:''}}));
   }
   if(/^\/api\/resv\/\d+\/cancel$/.test(p)){const id=+p.split('/')[3];DB.resv=DB.resv.filter(r=>r.id!==id);return W({ok:1})}
-  if(p==='/api/remind'){const t=today(),tm=ad(t,1);return O(DB.loans.filter(l=>!l.ret&&(l.due===tm||l.due<t)).map(l=>{const r=loanRow(l),late=l.due<t;return{...r,late,days:late?lateDays(l):0,text:late?`سلام ${r.uname}، کتاب «${r.bname}» ${lateDays(l)} روز از مهلت بازگشتش گذشته است. لطفاً آن را به کتابخانه بازگردانید.`:`سلام ${r.uname}، یادآوری: فردا مهلت بازگشت کتاب «${r.bname}» است.`}}))}
+  if(p==='/api/remind'){const t=today(),lim=ad(t,SET.remDays??1),df=l=>Math.round((new Date(l.due+'T12:00:00')-new Date(t+'T12:00:00'))/864e5);
+    return O(DB.loans.filter(l=>!l.ret&&l.due<=lim).sort((a,b)=>a.due<b.due?-1:1).map(l=>{const r=loanRow(l),left=df(l),late=left<0,when=late?'':left===0?'امروز':left===1?'فردا':P(left)+' روز دیگر';
+      return{...r,late,left,days:late?-left:0,when,text:late?`سلام ${r.uname}، کتاب «${r.bname}» ${P(-left)} روز از مهلت بازگشتش گذشته است. لطفاً آن را به کتابخانه بازگردانید.`:`سلام ${r.uname}، یادآوری: مهلت بازگشت کتاب «${r.bname}» ${when} است.`}}))}
   if(p==='/api/reviews'){
     if(m==='POST'){const rt=+B.rating;if(!byId(DB.books,B.bid)||!byId(DB.users,B.uid))return E('کتاب و عضو را انتخاب کنید');if(!(rt>=1&&rt<=5))return E('امتیاز را انتخاب کنید');
       if(DB.reviews.some(r=>r.bid===+B.bid&&r.uid===+B.uid))return E('برای این کتاب قبلاً از این عضو نظر ثبت شده است');
@@ -238,13 +240,13 @@ function lock(){
 }
 function banner(){
   const ready=DB.resv.filter(r=>r.st==='ready').length,late=DB.loans.filter(l=>!l.ret&&l.due<today()).length,bk=(DB.books.length+DB.users.length)&&(!SET.lastBackup||Date.now()-SET.lastBackup>7*864e5);
-  return (ready?`<div class="card" style="border-color:var(--ok)" onclick="TAB='loans';shell()">📣 ${P(ready)} کتاب رزروشده آمادهٔ تحویل است</div>`:'')+(late?`<div class="card" style="border-color:var(--wr)" onclick="TAB='loans';shell()">⚠️ ${P(late)} کتاب دیرکرد دارد</div>`:'')+(bk?`<div class="card" style="border-color:var(--wr)" onclick="TAB='settings';shell()">💾 مدتی است پشتیبان نگرفته‌اید؛ همین‌جا بزنید</div>`:'');
+  return (ready?`<div class="card" style="border-color:var(--ok)" onclick="TAB='remind';shell()">📣 ${P(ready)} کتاب رزروشده آمادهٔ تحویل است</div>`:'')+(late?`<div class="card" style="border-color:var(--wr)" onclick="TAB='remind';shell()">⚠️ ${P(late)} کتاب دیرکرد دارد</div>`:'')+(bk?`<div class="card" style="border-color:var(--wr)" onclick="TAB='settings';shell()">💾 مدتی است پشتیبان نگرفته‌اید؛ همین‌جا بزنید</div>`:'');
 }
 function shell(){
-  const tabs=[['books','کتاب‌ها'],['members','اعضا'],['loans','امانات'],['hist','تاریخچه'],['reviews','نظرات'],['stats','آمار'],['settings','تنظیمات و پشتیبان']];
+  const tabs=[['books','کتاب‌ها'],['members','اعضا'],['loans','امانات'],['remind','رزرو و یادآوری'],['hist','تاریخچه'],['reviews','نظرات'],['stats','آمار'],['settings','تنظیمات و پشتیبان']];
   $('#app').innerHTML=`<header><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K"><b>کُتُب</b><span class="mu">👤 ${esc(SET.name)}</span></header><nav>${tabs.map(t=>`<button data-t="${t[0]}" class="${t[0]===TAB?'on':''}">${t[1]}</button>`).join('')}</nav><main><div id="bnr">${banner()}</div><div id="view"></div></main>`;
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;LD=newLD();shell()});
-  ({books:vBooks,members:vMembers,loans:vLoans,hist:vHist,reviews:vReviews,stats:vStats,settings:vSettings})[TAB]();
+  ({books:vBooks,members:vMembers,loans:vLoans,remind:vRemind,hist:vHist,reviews:vReviews,stats:vStats,settings:vSettings})[TAB]();
 }
 const stars=b=>b.rn?`<span class="good">⭐ ${P(b.rating)} (${P(b.rn)} نظر)</span> · `:'';
 const shareBook=b=>{const t=`📚 ${b.name}\n✍️ ${b.author||'—'}${b.publisher?'\n🏢 '+b.publisher:''}\n🏷 ${b.topic||'—'} · ${AGES[b.age]}${b.summary?'\n\n'+b.summary:''}\n\nکد کتاب: ${b.code}`;if(NAT){NAT.shareText(t);return}if(navigator.share){navigator.share({text:t}).catch(()=>{});return}const show=()=>{ov(`<h3>متن معرفی کتاب</h3><div class="mu">متن را انتخاب و کپی کنید:</div><textarea id="shT" rows="9" readonly>${esc(t)}</textarea><button class="btn sec" style="width:100%;margin-top:8px" onclick="cov()">بستن</button>`);$('#shT').select()};try{navigator.clipboard.writeText(t).then(()=>alert('متن کتاب کپی شد'),show)}catch(e){show()}};
@@ -308,7 +310,20 @@ function readDate(id,man){
   if(b[1]!==m||b[2]!==d)throw new Error('این تاریخ وجود ندارد (ماه‌های هفتم تا یازدهم ۳۰ روز دارند)');
   return g[0]+'-'+String(g[1]).padStart(2,'0')+'-'+String(g[2]).padStart(2,'0');
 }
-/* امانت و بازگشت */
+/* رزرو و یادآوری */
+async function vRemind(){
+  const v=$('#view'),[books,M,rsv,rem]=await Promise.all([api('/api/books'),memList(),api('/api/resv'),api('/api/remind')]);
+  const ready=rsv.filter(r=>r.st==='ready'),wait=rsv.filter(r=>r.st==='wait'),days=SET.remDays??1,hold=id=>{const b=books.find(x=>x.id===id);return b&&b.holder?b.holder:'—'};
+  v.innerHTML=`<div class="card"><h3>ثبت رزرو کتاب</h3><div class="mu">برای کتابی که الان پیش شخص دیگری است. وقتی کتاب برگردد، در همین بخش و بالای صفحه خبر می‌دهد تا به متقاضی اطلاع بدهید.</div><label>کتابِ در امانت</label><input id="vb" list="vbk" placeholder="کد یا نام کتاب"><datalist id="vbk">${books.filter(b=>!b.avail).map(b=>`<option value="${esc(b.code)} — ${esc(b.name)}">`).join('')}</datalist><label>عضو متقاضی</label><input id="vm" list="mm" placeholder="نام یا موبایل عضو">${M.html}<button class="btn" id="vs" style="width:100%;margin-top:10px">ثبت رزرو</button></div>
+  <div class="card" style="${ready.length?'border-color:var(--ok)':''}"><h3 class="${ready.length?'good':''}">📣 رزروهای آمادهٔ تحویل (${P(ready.length)})</h3>${ready.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)} — کتاب برگشته؛ به عضو خبر بدهید</div></div><div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,'سلام '+r.uname+'، کتاب «'+r.bname+'» که رزرو کرده بودید در کتابخانه آماده تحویل است.')}">پیامک</a> `:''}<button class="btn sec sm" data-c="${r.id}">لغو</button></div></div>`).join('')||'<div class="mu">فعلاً رزرو آماده‌ای نیست</div>'}</div>
+  <div class="card"><h3>رزروهای در انتظار (${P(wait.length)})</h3>${wait.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">متقاضی: ${esc(r.uname)} · ${esc(r.phone)}<br>کتاب الان پیش: ${esc(hold(r.bid))}</div></div><button class="btn sec sm" data-c="${r.id}">لغو</button></div>`).join('')||'<div class="mu">رزروی در انتظار نیست</div>'}</div>
+  <div class="card"><h3>🔔 یادآوری موعد بازگشت (${P(rem.length)})</h3><label>یادآوری از چند روز قبل از موعد (۰ تا ۳۰)</label><input id="rd" type="number" min="0" max="30" value="${days}">${rem.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}<br>${r.late?'<span class="bad">⚠️ '+P(r.days)+' روز تاخیر</span>':'مهلت: '+r.when+' ('+fd(r.due)+')'}</div></div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,r.text)}">پیامک</a>`:''}</div>`).join('')||'<div class="mu" style="margin-top:8px">فعلاً کتابی نزدیک موعد یا دیرکرد نیست</div>'}</div>`;
+  v.querySelector('#rd').onchange=()=>{SET.remDays=Math.max(0,Math.min(30,Math.floor(+v.querySelector('#rd').value||0)));saveSet();shell()};
+  v.querySelector('#vs').onclick=()=>go(async()=>{const s=v.querySelector('#vb').value.trim(),b=books.find(x=>!x.avail&&(s===x.code+' — '+x.name||x.code===s)),m=M.find(v.querySelector('#vm').value);
+    if(!b)return alert('کتاب را از فهرست کتاب‌های در امانت انتخاب کنید (اگر کتاب در کتابخانه است، مستقیم امانت بدهید)');if(!m)return alert('عضو را از فهرست انتخاب کنید (ابتدا در بخش اعضا ثبت شود)');
+    await api('/api/resv','POST',{bid:b.id,uid:m.id});alert('رزرو ثبت شد؛ وقتی کتاب برگردد در همین بخش خبر می‌دهد');shell()});
+  on(v,'data-c',id=>go(async()=>{await api(`/api/resv/${id}/cancel`,'POST');shell()}));
+}/* امانت و بازگشت */
 async function withForce(fn,done){const r=await fn(false);if(r.__s===409){if(confirm('⚠️ '+r.warn))await fn(true);else return}done()}
 async function vLoans(){
   const v=$('#view'),[books,M,loans,rsv,rem]=await Promise.all([api('/api/books'),memList(),api('/api/loans?active=1'),api('/api/resv'),api('/api/remind')]);
@@ -318,10 +333,7 @@ async function vLoans(){
   <label style="display:flex;gap:6px;align-items:center;margin-top:10px"><input id="lh" type="checkbox" style="width:auto"${LD.hist?' checked':''}> این کتاب قبلاً برگشته است (ثبت امانت قدیمی از دفتر)</label><div id="lrw" class="${LD.hist?'':'hid'}">${dateBox('lr',LD.ret0,'تاریخ بازگشت',true)}</div>
   <div class="row"><div><label>مهلت (روز)</label><input id="ld" type="number" value="${LD.days}"></div><button class="btn" id="ls">ثبت امانت</button></div><div id="lmsg" class="good" style="margin-top:8px">${esc(LD.msg||'')}</div></div>
   <div class="card"><h3>بازگشت کتاب</h3><input id="rc" list="rk" placeholder="کد یا نام کتاب"><datalist id="rk">${loans.map(l=>`<option value="${esc(l.bcode)} — ${esc(l.bname)}">`).join('')}</datalist><div id="ri" style="margin-top:8px"></div></div>
-  ${ready.length?`<div class="card" style="border-color:var(--ok)"><h3 class="good">📣 رزروهای آمادهٔ تحویل</h3>${ready.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}</div></div><div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,'سلام '+r.uname+'، کتاب «'+r.bname+'» که رزرو کرده بودید در کتابخانه آماده تحویل است.')}">پیامک</a> `:''}<button class="btn sec sm" data-c="${r.id}">لغو</button></div></div>`).join('')}</div>`:''}
-  ${rem.length?`<div class="card"><h3>🔔 یادآوری‌ها (فردا یا دیرکرد)</h3>${rem.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${r.late?'<span class="bad">'+P(r.days)+' روز تاخیر</span>':'مهلت فردا'}</div></div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,r.text)}">پیامک</a>`:''}</div>`).join('')}</div>`:''}
-  <div class="card"><h3>کتاب‌های در امانت (${P(loans.length)})</h3>${loans.map(l=>`<div class="item"><div><b>${esc(l.bname)}</b><div class="mu">${esc(l.uname)} · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: <span class="${late(l)?'bad':''}">${fd(l.due)}${late(l)?' ⚠️ تاخیر':''}</span>${l.by?'<br>ثبت‌کننده: '+esc(l.by):''}</div></div><button class="btn sec sm" data-b="${l.id}">بازگشت</button></div>`).join('')||'<div class="mu">کتابی در امانت نیست</div>'}</div>
-  ${rsv.some(r=>r.st==='wait')?`<div class="card"><h3>رزروهای در انتظار</h3>${rsv.filter(r=>r.st==='wait').map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}</div></div><button class="btn sec sm" data-c="${r.id}">لغو</button></div>`).join('')}</div>`:''}`;
+  <div class="card"><h3>کتاب‌های در امانت (${P(loans.length)})</h3>${loans.map(l=>`<div class="item"><div><b>${esc(l.bname)}</b><div class="mu">${esc(l.uname)} · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: <span class="${late(l)?'bad':''}">${fd(l.due)}${late(l)?' ⚠️ تاخیر':''}</span>${l.by?'<br>ثبت‌کننده: '+esc(l.by):''}</div></div><button class="btn sec sm" data-b="${l.id}">بازگشت</button></div>`).join('')||'<div class="mu">کتابی در امانت نیست</div>'}</div>`;
   LD.msg='';wireDate('lo');wireDate('lr');$('#lh').onchange=()=>$('#lrw').classList.toggle('hid',!$('#lh').checked);
   $('#ls').onclick=()=>go(async()=>{
     const s=$('#lb').value.trim(),b=books.find(x=>s===x.code+' — '+x.name||x.code===s),m=M.find($('#lm').value);
@@ -391,13 +403,15 @@ async function vHist(){
 /* تنظیمات و پشتیبان */
 async function vSettings(){
   const m=await api('/api/members'),v=$('#view');
-  v.innerHTML=`<div class="card"><h3>این گوشی</h3><label>نام کاربری (برای هر گوشی متفاوت)</label><div class="row"><input id="un" value="${esc(SET.name)}"><button class="btn fit" id="us">ذخیره</button></div><div class="mu" style="margin-top:6px">شناسهٔ گوشی: ${esc(SET.tag)} (در کد کتاب‌های خودکار استفاده می‌شود)</div>
+  v.innerHTML=`<div class="card"><h3>ℹ️ دربارهٔ برنامه</h3><div>نسخهٔ برنامه: <b>${P(VERSION)}</b> <span class="mu">(ساخت ${fd(BUILD)})</span></div>${('serviceWorker' in navigator&&location.protocol.startsWith('http'))?'<button class="btn sec" id="upd" style="width:100%;margin-top:8px">بررسی و دریافت به‌روزرسانی</button><div class="mu" style="margin-top:6px">با اینترنت یا فیلترشکن بزنید. اطلاعات شما پاک نمی‌شود.</div>':''}</div>
+  <div class="card"><h3>این گوشی</h3><label>نام کاربری (برای هر گوشی متفاوت)</label><div class="row"><input id="un" value="${esc(SET.name)}"><button class="btn fit" id="us">ذخیره</button></div><div class="mu" style="margin-top:6px">شناسهٔ گوشی: ${esc(SET.tag)} (در کد کتاب‌های خودکار استفاده می‌شود)</div>
   <label>رمز قفل ۴ رقمی (اختیاری؛ خالی = بدون قفل)</label><div class="row"><input id="pn" inputmode="numeric" maxlength="4" value="${esc(SET.pin||'')}"><button class="btn fit" id="ps">ذخیره</button></div></div>
   <div class="card"><h3>💾 پشتیبان‌گیری و هماهنگ‌سازی گوشی‌ها</h3><div class="mu" style="margin-bottom:8px">«ساخت فایل پشتیبان» همهٔ اطلاعات را در یک فایل می‌گذارد و برای ارسال به ایتا یا هر برنامهٔ دیگر آماده می‌کند. در گوشی دیگر «افزودن فایل پشتیبان» را بزنید تا اطلاعات با هم ادغام شوند (اطلاعات قبلی پاک نمی‌شود).</div>
   <button class="btn" id="bk" style="width:100%">ساخت و ارسال فایل پشتیبان</button><label style="margin-top:10px">افزودن فایل پشتیبان گوشی دیگر</label><input id="rf" type="file"></div>
   <div class="card"><h3>قالب پس‌زمینهٔ جلد کتاب</h3><label>تصویر قالب (جدید یا جایگزین)</label><input id="tf" type="file" accept="image/*">${TPL?`<div class="mu" style="margin-top:8px">کادر را با انگشت جابه‌جا کنید و از دایرهٔ سبز گوشه، اندازه‌اش را تغییر دهید. عکس کتاب داخل همین کادر قرار می‌گیرد.</div><div id="tpb" style="position:relative;width:min(100%,260px);aspect-ratio:3/4;margin:8px auto;direction:ltr;background:var(--bd);border-radius:8px;overflow:hidden"><img src="${TPL}" style="width:100%;height:100%;object-fit:fill;display:block;pointer-events:none"><div id="tpr" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.35);touch-action:none;cursor:move"><div id="tph" style="position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:#1f6f5c;border:2px solid #fff"></div></div></div><label>نحوهٔ قرار گرفتن عکس در کادر</label><select id="tfit"><option value="contain"${SET.tplFit!=='cover'?' selected':''}>کامل داخل کادر جا بگیرد (برش نخورد)</option><option value="cover"${SET.tplFit==='cover'?' selected':''}>کادر را کاملاً پر کند (ممکن است کمی برش بخورد)</option></select><button class="btn" id="tb" style="width:100%;margin-top:8px">ذخیرهٔ کادر</button>`:'<div class="mu" style="margin-top:6px">ابتدا یک تصویر قالب انتخاب کنید؛ بعد می‌توانید کادر را مشخص کنید.</div>'}</div>
   <div class="card"><h3>خروجی اکسل (CSV)</h3><div class="row"><button class="btn sec" data-x="books">کتاب‌ها</button><button class="btn sec" data-x="members">اعضا</button><button class="btn sec" data-x="loans">امانت‌ها</button></div></div>
   `;
+  if($('#upd'))$('#upd').onclick=async()=>{try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update()}catch(e){}location.reload()};
   $('#us').onclick=()=>{const n=$('#un').value.trim();if(!n)return alert('نام کاربری خالی نباشد');SET.name=n;saveSet();alert('ذخیره شد');shell()};
   $('#ps').onclick=()=>{const p=$('#pn').value.trim();if(p&&!/^\d{4}$/.test(p))return alert('رمز باید ۴ رقم باشد');SET.pin=p;saveSet();alert(p?'رمز قفل فعال شد':'قفل برداشته شد')};
   $('#bk').onclick=()=>{SET.lastBackup=Date.now();saveSet();saveOut('ketab-backup-'+SET.tag+'-'+today()+'.json','application/json',makeBackup(),true)};
@@ -410,6 +424,8 @@ async function vSettings(){
   if(TPL){const fb=boxEditor();$('#tb').onclick=()=>{SET.tplBox={x:+fb.x.toFixed(4),y:+fb.y.toFixed(4),w:+fb.w.toFixed(4),h:+fb.h.toFixed(4)};SET.tplFit=$('#tfit').value;saveSet();alert('کادر ذخیره شد')}}
   on(v,'data-x',csvOut);
 }
+const VERSION='1.4',BUILD='2026-10-23';
+const verEl=document.createElement('div');verEl.id='ver';verEl.textContent='نسخه '+P(VERSION);verEl.style.cssText='position:fixed;bottom:6px;left:8px;font-size:11px;color:var(--mu);opacity:.85;z-index:3;pointer-events:none';document.body.appendChild(verEl);
 boot();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});

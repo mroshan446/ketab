@@ -89,13 +89,14 @@ const ad=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+ +n);retu
 const lateDays=l=>Math.round((new Date(today()+'T12:00:00')-new Date(l.due+'T12:00:00'))/864e5);
 const bookRow=b=>{const l=DB.loans.find(x=>x.bid===b.id&&!x.ret),rv=DB.reviews.filter(r=>r.bid===b.id);return{...b,cover:IMG[b.id]||null,avail:!l,holder:l?full(byId(DB.users,l.uid)):undefined,rating:rv.length?Math.round(rv.reduce((a,r)=>a+r.rating,0)/rv.length*10)/10:null,rn:rv.length}};
 const loanRow=l=>{const b=byId(DB.books,l.bid),u=byId(DB.users,l.uid);return{...l,bname:b?b.name:'(حذف‌شده)',bcode:b?b.code:'',uname:full(u),phone:u?u.phone:''}};
-function loanCreate(bid,uid,days,force){
+function loanCreate(bid,uid,days,force,out0,ret0){
   const b=byId(DB.books,bid),u=byId(DB.users,uid);if(!b||!u)return{err:'کتاب یا عضو پیدا نشد'};
-  if(DB.loans.some(l=>l.bid===bid&&!l.ret))return{err:'این کتاب هم‌اکنون در امانت است'};
-  const c=catOf(u.age);if(!force&&b.age!=='all'&&c&&c!==b.age)return{warn:`این کتاب برای رده سنی «${AGES[b.age]}» است و سن عضو ${u.age} سال است. ادامه می‌دهید؟`};
-  const rv=DB.resv.find(r=>r.bid===bid&&r.st==='ready'&&r.uid!==uid);if(!force&&rv)return{warn:'این کتاب برای '+full(byId(DB.users,rv.uid))+' رزرو شده است. ادامه می‌دهید؟'};
-  const out=today();DB.loans.push({id:nid(),bid,uid,out,due:ad(out,days||14),ret:null,by:SET.name});
-  DB.resv.forEach(r=>{if(r.bid===bid&&r.uid===uid&&r.st!=='done')r.st='done'});return{ok:1};
+  if(!ret0&&DB.loans.some(l=>l.bid===bid&&!l.ret))return{err:'این کتاب هم‌اکنون در امانت است'};
+  const c=catOf(u.age);if(!force&&!ret0&&b.age!=='all'&&c&&c!==b.age)return{warn:`این کتاب برای رده سنی «${AGES[b.age]}» است و سن عضو ${u.age} سال است. ادامه می‌دهید؟`};
+  const rv=DB.resv.find(r=>r.bid===bid&&r.st==='ready'&&r.uid!==uid);if(!force&&!ret0&&rv)return{warn:'این کتاب برای '+full(byId(DB.users,rv.uid))+' رزرو شده است. ادامه می‌دهید؟'};
+  const out=out0||today();if(ret0&&ret0<out)return{err:'تاریخ بازگشت قبل از تاریخ تحویل است'};
+  DB.loans.push({id:nid(),bid,uid,out,due:ad(out,days||14),ret:ret0||null,retBy:ret0?SET.name:undefined,by:SET.name});
+  if(!ret0)DB.resv.forEach(r=>{if(r.bid===bid&&r.uid===uid&&r.st!=='done')r.st='done'});return{ok:1};
 }
 function route(m,p,sp,B){
   const E=(e)=>[400,{error:e}],O=x=>[200,x],W=x=>{commit();return[200,x]};
@@ -129,10 +130,10 @@ function route(m,p,sp,B){
     Object.assign(u,{first:f,last:l,age:+B.age||null,gender:B.gender||'',phone:ph});return W({ok:1})}
   if(/^\/api\/members\/\d+\/del$/.test(p)){const id=+p.split('/')[3];if(DB.loans.some(l=>l.uid===id))return E('این عضو سابقهٔ امانت دارد و حذف نمی‌شود');DB.users=DB.users.filter(u=>u.id!==id);DB.resv=DB.resv.filter(r=>r.uid!==id);return W({ok:1})}
   if(p==='/api/loans'){
-    if(m==='POST'){const r=loanCreate(+B.bid,+B.uid,+B.days,B.force);if(r.err)return E(r.err);if(r.warn)return[409,{warn:r.warn}];return W(r)}
+    if(m==='POST'){const r=loanCreate(+B.bid,+B.uid,+B.days,B.force,B.out,B.ret);if(r.err)return E(r.err);if(r.warn)return[409,{warn:r.warn}];return W(r)}
     let L=DB.loans;if(sp.get('active'))L=L.filter(l=>!l.ret);return O(L.slice().reverse().map(loanRow));
   }
-  if(/^\/api\/loans\/\d+\/return$/.test(p)){const l=byId(DB.loans,p.split('/')[3]);if(l&&!l.ret){l.ret=today();l.retBy=SET.name;const rs=DB.resv.filter(r=>r.bid===l.bid&&r.st==='wait').sort((a,b)=>a.id-b.id)[0];if(rs)rs.st='ready'}return W({ok:1})}
+  if(/^\/api\/loans\/\d+\/return$/.test(p)){const l=byId(DB.loans,p.split('/')[3]);if(l&&!l.ret){const rd=B.ret||today();if(rd<l.out)return E('تاریخ بازگشت قبل از تاریخ تحویل است');l.ret=rd;l.retBy=SET.name;const rs=DB.resv.filter(r=>r.bid===l.bid&&r.st==='wait').sort((a,b)=>a.id-b.id)[0];if(rs)rs.st='ready'}return W({ok:1})}
   if(p==='/api/resv'){
     if(m==='POST'){const l=DB.loans.find(x=>x.bid===+B.bid&&!x.ret);if(!l)return E('این کتاب در کتابخانه موجود است؛ مستقیم امانت بدهید');if(l.uid===+B.uid)return E('این کتاب همین الان دست خود این عضو است');
       if(DB.resv.some(r=>r.bid===+B.bid&&r.uid===+B.uid&&r.st!=='done'))return E('برای این عضو قبلاً رزرو ثبت شده است');DB.resv.push({id:nid(),bid:+B.bid,uid:+B.uid,at:today(),st:'wait',by:SET.name});return W({ok:1})}
@@ -186,8 +187,12 @@ function mergeIn(inc){
 const NAT=window.AndroidBridge;
 function saveOut(name,mime,text,share){
   if(NAT){NAT.saveFile(name,mime,text,!!share);return}
-  if(share&&navigator.canShare){try{const f=new File([text],name,{type:mime});if(navigator.canShare({files:[f]})){navigator.share({files:[f],title:name}).catch(()=>{});return}}catch(e){}}
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove();
+  const url=URL.createObjectURL(new Blob([text],{type:mime})),a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  if(!share)return;
+  const f=new File([text],name,{type:mime}),can=!!(navigator.canShare&&navigator.canShare({files:[f]}));
+  ov(`<h3>✅ فایل پشتیبان ساخته شد</h3><div class="mu">فایل «${esc(name)}» در پوشهٔ دانلودها (Downloads) گوشی ذخیره شد.</div>${can?'<button class="btn" id="shB" style="width:100%;margin-top:10px">ارسال فایل (ایتا، بلوتوث، ...)</button>':'<div class="mu" style="margin-top:8px">ارسال مستقیم در این مرورگر ممکن نیست؛ فایل را از برنامهٔ «فایل‌ها» یا «دانلودها» برای گوشی دیگر بفرستید.</div>'}<button class="btn sec" style="width:100%;margin-top:8px" onclick="cov()">بستن</button>`);
+  if(can)$('#shB').onclick=()=>navigator.share({files:[f],title:name}).catch(e=>{if(e&&e.name!=='AbortError')alert('ارسال انجام نشد ('+e.name+'). فایل در پوشهٔ دانلودها هست؛ از آنجا بفرستید.')});
 }
 const smsHref=(ph,t)=>'sms:'+ph+'?body='+encodeURIComponent(t);
 function csvOut(what){
@@ -238,7 +243,7 @@ function banner(){
 function shell(){
   const tabs=[['books','کتاب‌ها'],['members','اعضا'],['loans','امانات'],['hist','تاریخچه'],['reviews','نظرات'],['stats','آمار'],['settings','تنظیمات و پشتیبان']];
   $('#app').innerHTML=`<header><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K"><b>کُتُب</b><span class="mu">👤 ${esc(SET.name)}</span></header><nav>${tabs.map(t=>`<button data-t="${t[0]}" class="${t[0]===TAB?'on':''}">${t[1]}</button>`).join('')}</nav><main><div id="bnr">${banner()}</div><div id="view"></div></main>`;
-  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;shell()});
+  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;LD=newLD();shell()});
   ({books:vBooks,members:vMembers,loans:vLoans,hist:vHist,reviews:vReviews,stats:vStats,settings:vSettings})[TAB]();
 }
 const stars=b=>b.rn?`<span class="good">⭐ ${P(b.rating)} (${P(b.rn)} نظر)</span> · `:'';
@@ -286,26 +291,53 @@ async function bookForm(b,tp){
     cov();shell();
   });
 }
+const JMN=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+function j2g(jy,jm,jd){jy+=1595;let days=-355668+365*jy+dv(jy,33)*8+dv((jy%33)+3,4)+jd+(jm<7?(jm-1)*31:((jm-7)*30)+186),gy=400*dv(days,146097);days%=146097;if(days>36524){gy+=100*dv(--days,36524);days%=36524;if(days>=365)days++}gy+=4*dv(days,1461);days%=1461;if(days>365){gy+=dv(days-1,365);days=(days-1)%365}let gd=days+1;const sa=[0,31,(gy%4==0&&gy%100!=0)||gy%400==0?29:28,31,30,31,30,31,31,30,31,30,31];let gm;for(gm=0;gm<13&&gd>sa[gm];gm++)gd-=sa[gm];return[gy,gm,gd]}
+const jNow=()=>{const t=today().split('-').map(Number);return g2j(t[0],t[1],t[2])};
+const newLD=()=>({out:{mode:'auto'},hist:false,ret0:{},days:14,rt:{mode:'auto'},msg:''});
+let LD=newLD();
+function dateBox(id,st,label,manOnly){
+  const n=jNow(),d=st.d||n[2],m=st.m||n[1],y=st.y||n[0],man=manOnly||st.mode==='man',o=(a,b,sel,f)=>{let h='';for(let i=a;i<=b;i++)h+=`<option value="${i}"${i===sel?' selected':''}>${f?f(i):P(i)}</option>`;return h};
+  return `<label>${label}</label>${manOnly?'':`<select id="${id}M"><option value="auto"${st.mode!=='man'?' selected':''}>امروز (خودکار)</option><option value="man"${st.mode==='man'?' selected':''}>تاریخ دستی (ثبت از دفتر)</option></select>`}<div id="${id}B" class="row ${man?'':'hid'}" style="gap:4px;margin-top:6px"><select id="${id}d">${o(1,31,d)}</select><select id="${id}m">${o(1,12,m,i=>JMN[i-1])}</select><select id="${id}y">${o(n[0]-12,n[0]+1,y)}</select></div>`;
+}
+function wireDate(id){const s=$('#'+id+'M');if(s)s.onchange=()=>$('#'+id+'B').classList.toggle('hid',s.value!=='man')}
+const readSt=(id,man)=>({mode:man?'man':$('#'+id+'M').value,d:+$('#'+id+'d').value,m:+$('#'+id+'m').value,y:+$('#'+id+'y').value});
+function readDate(id,man){
+  if(!man&&$('#'+id+'M').value==='auto')return today();
+  const y=+$('#'+id+'y').value,m=+$('#'+id+'m').value,d=+$('#'+id+'d').value,g=j2g(y,m,d),b=g2j(g[0],g[1],g[2]);
+  if(b[1]!==m||b[2]!==d)throw new Error('این تاریخ وجود ندارد (ماه‌های هفتم تا یازدهم ۳۰ روز دارند)');
+  return g[0]+'-'+String(g[1]).padStart(2,'0')+'-'+String(g[2]).padStart(2,'0');
+}
 /* امانت و بازگشت */
 async function withForce(fn,done){const r=await fn(false);if(r.__s===409){if(confirm('⚠️ '+r.warn))await fn(true);else return}done()}
 async function vLoans(){
   const v=$('#view'),[books,M,loans,rsv,rem]=await Promise.all([api('/api/books'),memList(),api('/api/loans?active=1'),api('/api/resv'),api('/api/remind')]);
   const late=l=>l.due<today(),ready=rsv.filter(r=>r.st==='ready');
-  v.innerHTML=`<div class="card"><h3>رفت کتاب (ثبت امانت)</h3><label>کتاب (کد یا نام)</label><input id="lb" list="bk" placeholder="کد یا نام کتاب"><datalist id="bk">${books.filter(b=>b.avail).map(b=>`<option value="${esc(b.code)} — ${esc(b.name)}">`).join('')}</datalist>
-  <label>عضو (نام یا موبایل)</label><input id="lm" list="mm">${M.html}<div class="row"><div><label>مهلت (روز)</label><input id="ld" type="number" value="14"></div><button class="btn" id="ls">ثبت امانت</button></div></div>
+  v.innerHTML=`<div class="card"><h3>رفت کتاب (ثبت امانت)</h3><label>کتاب (کد یا نام)</label><input id="lb" list="bk" placeholder="کد یا نام کتاب"><datalist id="bk">${books.map(b=>`<option value="${esc(b.code)} — ${esc(b.name)}">`).join('')}</datalist>
+  <label>عضو (نام یا موبایل)</label><input id="lm" list="mm">${M.html}${dateBox('lo',LD.out,'تاریخ تحویل (رفت کتاب)')}
+  <label style="display:flex;gap:6px;align-items:center;margin-top:10px"><input id="lh" type="checkbox" style="width:auto"${LD.hist?' checked':''}> این کتاب قبلاً برگشته است (ثبت امانت قدیمی از دفتر)</label><div id="lrw" class="${LD.hist?'':'hid'}">${dateBox('lr',LD.ret0,'تاریخ بازگشت',true)}</div>
+  <div class="row"><div><label>مهلت (روز)</label><input id="ld" type="number" value="${LD.days}"></div><button class="btn" id="ls">ثبت امانت</button></div><div id="lmsg" class="good" style="margin-top:8px">${esc(LD.msg||'')}</div></div>
   <div class="card"><h3>بازگشت کتاب</h3><input id="rc" list="rk" placeholder="کد یا نام کتاب"><datalist id="rk">${loans.map(l=>`<option value="${esc(l.bcode)} — ${esc(l.bname)}">`).join('')}</datalist><div id="ri" style="margin-top:8px"></div></div>
   ${ready.length?`<div class="card" style="border-color:var(--ok)"><h3 class="good">📣 رزروهای آمادهٔ تحویل</h3>${ready.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}</div></div><div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,'سلام '+r.uname+'، کتاب «'+r.bname+'» که رزرو کرده بودید در کتابخانه آماده تحویل است.')}">پیامک</a> `:''}<button class="btn sec sm" data-c="${r.id}">لغو</button></div></div>`).join('')}</div>`:''}
   ${rem.length?`<div class="card"><h3>🔔 یادآوری‌ها (فردا یا دیرکرد)</h3>${rem.map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${r.late?'<span class="bad">'+P(r.days)+' روز تاخیر</span>':'مهلت فردا'}</div></div>${r.phone?`<a class="btn sm" href="${smsHref(r.phone,r.text)}">پیامک</a>`:''}</div>`).join('')}</div>`:''}
   <div class="card"><h3>کتاب‌های در امانت (${P(loans.length)})</h3>${loans.map(l=>`<div class="item"><div><b>${esc(l.bname)}</b><div class="mu">${esc(l.uname)} · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: <span class="${late(l)?'bad':''}">${fd(l.due)}${late(l)?' ⚠️ تاخیر':''}</span>${l.by?'<br>ثبت‌کننده: '+esc(l.by):''}</div></div><button class="btn sec sm" data-b="${l.id}">بازگشت</button></div>`).join('')||'<div class="mu">کتابی در امانت نیست</div>'}</div>
   ${rsv.some(r=>r.st==='wait')?`<div class="card"><h3>رزروهای در انتظار</h3>${rsv.filter(r=>r.st==='wait').map(r=>`<div class="item"><div><b>${esc(r.bname)}</b><div class="mu">${esc(r.uname)} · ${esc(r.phone)}</div></div><button class="btn sec sm" data-c="${r.id}">لغو</button></div>`).join('')}</div>`:''}`;
+  LD.msg='';wireDate('lo');wireDate('lr');$('#lh').onchange=()=>$('#lrw').classList.toggle('hid',!$('#lh').checked);
   $('#ls').onclick=()=>go(async()=>{
     const s=$('#lb').value.trim(),b=books.find(x=>s===x.code+' — '+x.name||x.code===s),m=M.find($('#lm').value);
-    if(!b||!m)return alert('کتاب و عضو را از فهرست انتخاب کنید (عضو باید ابتدا در تنظیمات ثبت شده باشد)');
-    await withForce(f=>api('/api/loans','POST',{bid:b.id,uid:m.m?m.id:m.id,days:+$('#ld').value,force:f}),()=>shell());
+    if(!b||!m)return alert('کتاب و عضو را از فهرست انتخاب کنید (عضو باید ابتدا در بخش اعضا ثبت شده باشد)');
+    const out=readDate('lo'),hist=$('#lh').checked,ret=hist?readDate('lr',true):null;
+    if(out>today())return alert('تاریخ تحویل نمی‌تواند در آینده باشد');
+    if(ret&&ret<out)return alert('تاریخ بازگشت نمی‌تواند قبل از تاریخ تحویل باشد');
+    if(ret&&ret>today())return alert('تاریخ بازگشت نمی‌تواند در آینده باشد');
+    await withForce(f=>api('/api/loans','POST',{bid:b.id,uid:m.id,days:+$('#ld').value||14,out,ret,force:f}),()=>{LD.out=readSt('lo');LD.hist=hist;LD.ret0=readSt('lr',true);LD.days=+$('#ld').value||14;LD.msg='✅ ثبت شد: «'+b.name+'» برای '+m.first+' '+m.last;shell()});
   });
   const rc=()=>{const s=$('#rc').value.trim(),l=loans.find(x=>s===x.bcode+' — '+x.bname||x.bcode===s);
-    $('#ri').innerHTML=!s?'':!l?'<span class="mu">این کتاب در امانت نیست یا پیدا نشد</span>':`<div class="mu"><b>${esc(l.bname)}</b><br>تحویل‌گیرنده: <b>${esc(l.uname)}</b> · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: ${fd(l.due)}<br>تاریخ بازگشت: <b>${fd(today())}</b> ${late(l)?'<span class="bad">⚠️ '+P(lateDays(l))+' روز تاخیر</span>':'<span class="good">در مهلت</span>'}</div><button class="btn red" id="rb" style="width:100%;margin-top:8px">ثبت بازگشت کتاب</button>`;
-    if(l)$('#rb').onclick=()=>go(async()=>{await api(`/api/loans/${l.id}/return`,'POST');shell()})};
+    $('#ri').innerHTML=!s?'':!l?'<span class="mu">این کتاب در امانت نیست یا پیدا نشد</span>':`<div class="mu"><b>${esc(l.bname)}</b><br>تحویل‌گیرنده: <b>${esc(l.uname)}</b> · ${esc(l.phone)}<br>تحویل: ${fd(l.out)} · مهلت: ${fd(l.due)}</div>${dateBox('rt',LD.rt,'تاریخ بازگشت')}<div id="rinfo" style="margin-top:6px"></div><button class="btn red" id="rb" style="width:100%;margin-top:8px">ثبت بازگشت کتاب</button>`;
+    if(!l)return;wireDate('rt');
+    const upd=()=>{let d;try{d=readDate('rt')}catch(e){$('#rinfo').innerHTML='<span class="bad">'+esc(e.message)+'</span>';return}$('#rinfo').innerHTML=l.due<d?'<span class="bad">⚠️ '+P(Math.round((new Date(d+'T12:00:00')-new Date(l.due+'T12:00:00'))/864e5))+' روز تاخیر</span>':'<span class="good">در مهلت</span>'};
+    upd();['rtM','rtd','rtm','rty'].forEach(i=>$('#'+i).addEventListener('change',upd));
+    $('#rb').onclick=()=>go(async()=>{const d=readDate('rt');if(d>today())return alert('تاریخ بازگشت نمی‌تواند در آینده باشد');if(d<l.out)return alert('تاریخ بازگشت نمی‌تواند قبل از تاریخ تحویل باشد');LD.rt=readSt('rt');LD.msg='✅ بازگشت ثبت شد: «'+l.bname+'»';await api(`/api/loans/${l.id}/return`,'POST',{ret:d});shell()})};
   $('#rc').oninput=rc;
   on(v,'data-b',id=>go(async()=>{await api(`/api/loans/${id}/return`,'POST');shell()}));
   on(v,'data-c',id=>go(async()=>{await api(`/api/resv/${id}/cancel`,'POST');shell()}));
@@ -362,7 +394,7 @@ async function vSettings(){
   v.innerHTML=`<div class="card"><h3>این گوشی</h3><label>نام کاربری (برای هر گوشی متفاوت)</label><div class="row"><input id="un" value="${esc(SET.name)}"><button class="btn fit" id="us">ذخیره</button></div><div class="mu" style="margin-top:6px">شناسهٔ گوشی: ${esc(SET.tag)} (در کد کتاب‌های خودکار استفاده می‌شود)</div>
   <label>رمز قفل ۴ رقمی (اختیاری؛ خالی = بدون قفل)</label><div class="row"><input id="pn" inputmode="numeric" maxlength="4" value="${esc(SET.pin||'')}"><button class="btn fit" id="ps">ذخیره</button></div></div>
   <div class="card"><h3>💾 پشتیبان‌گیری و هماهنگ‌سازی گوشی‌ها</h3><div class="mu" style="margin-bottom:8px">«ساخت فایل پشتیبان» همهٔ اطلاعات را در یک فایل می‌گذارد و برای ارسال به ایتا یا هر برنامهٔ دیگر آماده می‌کند. در گوشی دیگر «افزودن فایل پشتیبان» را بزنید تا اطلاعات با هم ادغام شوند (اطلاعات قبلی پاک نمی‌شود).</div>
-  <button class="btn" id="bk" style="width:100%">ساخت و ارسال فایل پشتیبان</button><label style="margin-top:10px">افزودن فایل پشتیبان گوشی دیگر</label><input id="rf" type="file" accept=".json,application/json"></div>
+  <button class="btn" id="bk" style="width:100%">ساخت و ارسال فایل پشتیبان</button><label style="margin-top:10px">افزودن فایل پشتیبان گوشی دیگر</label><input id="rf" type="file"></div>
   <div class="card"><h3>قالب پس‌زمینهٔ جلد کتاب</h3><label>تصویر قالب (جدید یا جایگزین)</label><input id="tf" type="file" accept="image/*">${TPL?`<div class="mu" style="margin-top:8px">کادر را با انگشت جابه‌جا کنید و از دایرهٔ سبز گوشه، اندازه‌اش را تغییر دهید. عکس کتاب داخل همین کادر قرار می‌گیرد.</div><div id="tpb" style="position:relative;width:min(100%,260px);aspect-ratio:3/4;margin:8px auto;direction:ltr;background:var(--bd);border-radius:8px;overflow:hidden"><img src="${TPL}" style="width:100%;height:100%;object-fit:fill;display:block;pointer-events:none"><div id="tpr" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.35);touch-action:none;cursor:move"><div id="tph" style="position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:#1f6f5c;border:2px solid #fff"></div></div></div><label>نحوهٔ قرار گرفتن عکس در کادر</label><select id="tfit"><option value="contain"${SET.tplFit!=='cover'?' selected':''}>کامل داخل کادر جا بگیرد (برش نخورد)</option><option value="cover"${SET.tplFit==='cover'?' selected':''}>کادر را کاملاً پر کند (ممکن است کمی برش بخورد)</option></select><button class="btn" id="tb" style="width:100%;margin-top:8px">ذخیرهٔ کادر</button>`:'<div class="mu" style="margin-top:6px">ابتدا یک تصویر قالب انتخاب کنید؛ بعد می‌توانید کادر را مشخص کنید.</div>'}</div>
   <div class="card"><h3>خروجی اکسل (CSV)</h3><div class="row"><button class="btn sec" data-x="books">کتاب‌ها</button><button class="btn sec" data-x="members">اعضا</button><button class="btn sec" data-x="loans">امانت‌ها</button></div></div>
   `;

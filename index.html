@@ -222,6 +222,55 @@ function boxEditor(){
     else{b.w=Math.min(1-b.x,Math.max(.1,st.b.w+dx));b.h=Math.min(1-b.y,Math.max(.1,st.b.h+dy))}draw()};
   r.onpointerup=()=>{mode=null};return b;
 }
+/* ===== تصویر کتاب: خواندن امن + کادر برش ===== */
+function readImg(f){return new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>no(new Error('این تصویر خوانده نشد. عکس دیگری انتخاب کنید (ترجیحاً از گالری، نه مستقیم از دوربین).'));im.src=URL.createObjectURL(f)})}
+async function workCanvas(f){
+  let src=null,w,h;
+  if(window.createImageBitmap){try{src=await createImageBitmap(f);w=src.width;h=src.height}catch(e){src=null}}
+  if(!src){src=await readImg(f);w=src.naturalWidth||src.width;h=src.naturalHeight||src.height}
+  const s=Math.min(1,1400/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*s));c.height=Math.max(1,Math.round(h*s));
+  c.getContext('2d').drawImage(src,0,0,c.width,c.height);if(src.close)src.close();return c;
+}
+function cropFlow(f,useTpl){
+  return new Promise(async(ok,no)=>{
+    let wc;try{wc=await workCanvas(f)}catch(e){return no(e)}
+    const bx=SET.tplBox||{x:.16,y:.14,w:.68,h:.72},W=480,H=640,asp=useTpl&&TPL?(bx.w*W)/(bx.h*H):3/4;
+    const o2=document.createElement('div');o2.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:10px;overflow:auto';
+    o2.innerHTML=`<div style="color:#fff;text-align:center;font-size:14px">کادر را با انگشت جابه‌جا کنید و از دایرهٔ سبز گوشه، اندازه‌اش را تغییر دهید.<br>فقط بخش داخل کادر روی جلد قرار می‌گیرد.</div><div style="position:relative;direction:ltr;line-height:0"><img id="cpi" style="max-width:min(92vw,420px);max-height:58vh;display:block;border-radius:6px;user-select:none;-webkit-user-drag:none"><div id="cpr" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move;touch-action:none"><div id="cph" style="position:absolute;right:-13px;bottom:-13px;width:28px;height:28px;border-radius:50%;background:#1f6f5c;border:2px solid #fff"></div></div></div><div style="display:flex;gap:8px;width:100%;max-width:420px"><button class="btn" id="cpo" style="flex:1">تأیید</button><button class="btn sec" id="cpc" style="flex:1;background:#fff">انصراف</button></div>`;
+    document.body.appendChild(o2);
+    const img=o2.querySelector('#cpi'),r=o2.querySelector('#cpr');img.src=wc.toDataURL('image/jpeg',.9);try{await img.decode()}catch(e){}
+    const R0=img.getBoundingClientRect(),iw=R0.width,ih=R0.height;let w0=Math.min(iw,ih*asp)*.9;const b={x:(iw-w0)/2,y:(ih-w0/asp)/2,w:w0,h:w0/asp};
+    const draw=()=>{r.style.left=b.x+'px';r.style.top=b.y+'px';r.style.width=b.w+'px';r.style.height=b.h+'px'};draw();
+    let mode=null,st=null;const pt=e=>{const R=img.getBoundingClientRect();return{x:e.clientX-R.left,y:e.clientY-R.top}};
+    r.onpointerdown=e=>{mode=e.target.id==='cph'?'rs':'mv';st={p:pt(e),b:{...b}};r.setPointerCapture(e.pointerId);e.preventDefault()};
+    r.onpointermove=e=>{if(!mode)return;const p=pt(e),dx=p.x-st.p.x,dy=p.y-st.p.y;
+      if(mode==='mv'){b.x=Math.min(iw-b.w,Math.max(0,st.b.x+dx));b.y=Math.min(ih-b.h,Math.max(0,st.b.y+dy))}
+      else{let w=Math.max(40,st.b.w+Math.max(dx,dy*asp));w=Math.min(w,iw-st.b.x,(ih-st.b.y)*asp);b.w=w;b.h=w/asp}draw()};
+    r.onpointerup=()=>{mode=null};
+    o2.querySelector('#cpc').onclick=()=>{o2.remove();ok(null)};
+    o2.querySelector('#cpo').onclick=async()=>{
+      const sx=wc.width/iw,sy=wc.height/ih,c=document.createElement('canvas');
+      if(useTpl&&TPL){c.width=W;c.height=H;const x=c.getContext('2d');await new Promise(o=>{const t=new Image();t.onload=()=>{x.drawImage(t,0,0,W,H);o()};t.onerror=o;t.src=TPL});x.drawImage(wc,b.x*sx,b.y*sy,b.w*sx,b.h*sy,bx.x*W,bx.y*H,bx.w*W,bx.h*H)}
+      else{c.width=420;c.height=Math.round(420/asp);c.getContext('2d').drawImage(wc,b.x*sx,b.y*sy,b.w*sx,b.h*sy,0,0,c.width,c.height)}
+      o2.remove();ok(c.toDataURL('image/jpeg',.82));
+    };
+  });
+}
+/* ===== پشتیبان: ارسال یا ذخیره ===== */
+const bkName=()=>'ketab-backup-'+SET.tag+'-'+today()+'.json';
+async function shareBackup(){
+  SET.lastBackup=Date.now();saveSet();const name=bkName(),text=makeBackup();
+  if(NAT){NAT.saveFile(name,'application/json',text,true);return}
+  if(navigator.canShare&&navigator.share){
+    for(const[n,t]of[[name,'application/json'],[name.replace(/\.json$/,'.txt'),'text/plain']]){
+      const f=new File([text],n,{type:t});
+      if(navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:n});return}catch(e){if(e&&e.name==='AbortError')return;break}}
+    }
+  }
+  saveOut(name,'application/json',text,false);
+  alert('ارسال مستقیم در این مرورگر ممکن نشد؛ فایل در پوشهٔ دانلودها (Downloads) ذخیره شد. از همان‌جا برای ایتا بفرستید.');
+}
+function saveBackupFile(){SET.lastBackup=Date.now();saveSet();saveOut(bkName(),'application/json',makeBackup(),false);if(!NAT)alert('فایل پشتیبان در پوشهٔ دانلودها (Downloads) ذخیره شد.')}
 /* ===== رابط ===== */
 let TAB='books',COVER=null;
 const go=async f=>{try{return await f()}catch(e){if(e&&e.message)alert(e.message)}};
@@ -285,7 +334,7 @@ async function bookForm(b,tp){
   <label>تصویر کتاب</label><input id="bi" type="file" accept="image/*">${TPL?'<label style="display:flex;gap:6px;align-items:center"><input id="ut" type="checkbox" checked style="width:auto"> قرار دادن روی قالب پس‌زمینه</label>':''}<img id="pv" class="hid" style="width:90px;margin-top:8px;border-radius:6px">
   <div class="row" style="margin-top:12px"><button class="btn" id="bv">ذخیره</button><button class="btn sec" onclick="cov()">انصراف</button></div>`);
   $('#bt').onchange=()=>$('#btn').classList.toggle('hid',$('#bt').value!=='__n');
-  $('#bi').onchange=ev=>go(async()=>{const f=ev.target.files[0];if(!f)return;COVER=$('#ut')&&$('#ut').checked?await compose(f,TPL):await shrink(f,420);$('#pv').src=COVER;$('#pv').classList.remove('hid')});
+  $('#bi').onchange=ev=>go(async()=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const c=await cropFlow(f,!!($('#ut')&&$('#ut').checked&&TPL));if(!c)return;COVER=c;$('#pv').src=COVER;$('#pv').classList.remove('hid')});
   $('#bv').onclick=()=>go(async()=>{
     let t=$('#bt').value;if(t==='__n')t=$('#btn').value;
     const d={name:$('#bn').value,author:$('#ba').value,publisher:$('#bp').value,topic:t,age:$('#bg').value,donor:$('#bd').value,summary:$('#bs').value,cover:COVER};
@@ -406,25 +455,25 @@ async function vSettings(){
   v.innerHTML=`<div class="card"><h3>ℹ️ دربارهٔ برنامه</h3><div>نسخهٔ برنامه: <b>${P(VERSION)}</b> <span class="mu">(ساخت ${fd(BUILD)})</span></div>${('serviceWorker' in navigator&&location.protocol.startsWith('http'))?'<button class="btn sec" id="upd" style="width:100%;margin-top:8px">بررسی و دریافت به‌روزرسانی</button><div class="mu" style="margin-top:6px">با اینترنت یا فیلترشکن بزنید. اطلاعات شما پاک نمی‌شود.</div>':''}</div>
   <div class="card"><h3>این گوشی</h3><label>نام کاربری (برای هر گوشی متفاوت)</label><div class="row"><input id="un" value="${esc(SET.name)}"><button class="btn fit" id="us">ذخیره</button></div><div class="mu" style="margin-top:6px">شناسهٔ گوشی: ${esc(SET.tag)} (در کد کتاب‌های خودکار استفاده می‌شود)</div>
   <label>رمز قفل ۴ رقمی (اختیاری؛ خالی = بدون قفل)</label><div class="row"><input id="pn" inputmode="numeric" maxlength="4" value="${esc(SET.pin||'')}"><button class="btn fit" id="ps">ذخیره</button></div></div>
-  <div class="card"><h3>💾 پشتیبان‌گیری و هماهنگ‌سازی گوشی‌ها</h3><div class="mu" style="margin-bottom:8px">«ساخت فایل پشتیبان» همهٔ اطلاعات را در یک فایل می‌گذارد و برای ارسال به ایتا یا هر برنامهٔ دیگر آماده می‌کند. در گوشی دیگر «افزودن فایل پشتیبان» را بزنید تا اطلاعات با هم ادغام شوند (اطلاعات قبلی پاک نمی‌شود).</div>
-  <button class="btn" id="bk" style="width:100%">ساخت و ارسال فایل پشتیبان</button><label style="margin-top:10px">افزودن فایل پشتیبان گوشی دیگر</label><input id="rf" type="file"></div>
-  <div class="card"><h3>قالب پس‌زمینهٔ جلد کتاب</h3><label>تصویر قالب (جدید یا جایگزین)</label><input id="tf" type="file" accept="image/*">${TPL?`<div class="mu" style="margin-top:8px">کادر را با انگشت جابه‌جا کنید و از دایرهٔ سبز گوشه، اندازه‌اش را تغییر دهید. عکس کتاب داخل همین کادر قرار می‌گیرد.</div><div id="tpb" style="position:relative;width:min(100%,260px);aspect-ratio:3/4;margin:8px auto;direction:ltr;background:var(--bd);border-radius:8px;overflow:hidden"><img src="${TPL}" style="width:100%;height:100%;object-fit:fill;display:block;pointer-events:none"><div id="tpr" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.35);touch-action:none;cursor:move"><div id="tph" style="position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:#1f6f5c;border:2px solid #fff"></div></div></div><label>نحوهٔ قرار گرفتن عکس در کادر</label><select id="tfit"><option value="contain"${SET.tplFit!=='cover'?' selected':''}>کامل داخل کادر جا بگیرد (برش نخورد)</option><option value="cover"${SET.tplFit==='cover'?' selected':''}>کادر را کاملاً پر کند (ممکن است کمی برش بخورد)</option></select><button class="btn" id="tb" style="width:100%;margin-top:8px">ذخیرهٔ کادر</button>`:'<div class="mu" style="margin-top:6px">ابتدا یک تصویر قالب انتخاب کنید؛ بعد می‌توانید کادر را مشخص کنید.</div>'}</div>
+  <div class="card"><h3>💾 پشتیبان‌گیری و هماهنگ‌سازی گوشی‌ها</h3><div class="mu" style="margin-bottom:8px">همهٔ اطلاعات در یک فایل جمع می‌شود. «ارسال» منوی اشتراک گوشی را باز می‌کند؛ در آن <b>ایتا</b> را انتخاب کنید و مثلاً «پیام‌های ذخیره‌شده» یا گروه خودتان را بزنید (فایلی در پوشهٔ دانلودها ذخیره نمی‌شود). در گوشی دیگر «افزودن فایل پشتیبان» را بزنید تا اطلاعات ادغام شود (اطلاعات قبلی پاک نمی‌شود).</div>
+  <button class="btn" id="bk" style="width:100%">ارسال فایل پشتیبان (ایتا و ...)</button><button class="btn sec" id="bk2" style="width:100%;margin-top:8px">فقط ذخیرهٔ فایل در گوشی</button><label style="margin-top:10px">افزودن فایل پشتیبان گوشی دیگر</label><input id="rf" type="file"></div>
+  <div class="card"><h3>قالب پس‌زمینهٔ جلد کتاب</h3><label>تصویر قالب (جدید یا جایگزین)</label><input id="tf" type="file" accept="image/*">${TPL?`<div class="mu" style="margin-top:8px">کادر را با انگشت جابه‌جا کنید و از دایرهٔ سبز گوشه، اندازه‌اش را تغییر دهید. عکس کتاب داخل همین کادر قرار می‌گیرد.</div><div id="tpb" style="position:relative;width:min(100%,260px);aspect-ratio:3/4;margin:8px auto;direction:ltr;background:var(--bd);border-radius:8px;overflow:hidden"><img src="${TPL}" style="width:100%;height:100%;object-fit:fill;display:block;pointer-events:none"><div id="tpr" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.35);touch-action:none;cursor:move"><div id="tph" style="position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:#1f6f5c;border:2px solid #fff"></div></div></div><button class="btn" id="tb" style="width:100%;margin-top:8px">ذخیرهٔ کادر</button>`:'<div class="mu" style="margin-top:6px">ابتدا یک تصویر قالب انتخاب کنید؛ بعد می‌توانید کادر را مشخص کنید.</div>'}</div>
   <div class="card"><h3>خروجی اکسل (CSV)</h3><div class="row"><button class="btn sec" data-x="books">کتاب‌ها</button><button class="btn sec" data-x="members">اعضا</button><button class="btn sec" data-x="loans">امانت‌ها</button></div></div>
   `;
   if($('#upd'))$('#upd').onclick=async()=>{try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update()}catch(e){}location.reload()};
   $('#us').onclick=()=>{const n=$('#un').value.trim();if(!n)return alert('نام کاربری خالی نباشد');SET.name=n;saveSet();alert('ذخیره شد');shell()};
   $('#ps').onclick=()=>{const p=$('#pn').value.trim();if(p&&!/^\d{4}$/.test(p))return alert('رمز باید ۴ رقم باشد');SET.pin=p;saveSet();alert(p?'رمز قفل فعال شد':'قفل برداشته شد')};
-  $('#bk').onclick=()=>{SET.lastBackup=Date.now();saveSet();saveOut('ketab-backup-'+SET.tag+'-'+today()+'.json','application/json',makeBackup(),true)};
+  $('#bk').onclick=shareBackup;$('#bk2').onclick=saveBackupFile;
   $('#rf').onchange=ev=>go(async()=>{const f=ev.target.files[0];if(!f)return;let inc;try{inc=JSON.parse(await f.text())}catch(e){return alert('فایل معتبر نیست')}
     if(inc.app!=='ketab'||!inc.data)return alert('این فایل پشتیبان کُتُب نیست');
     const same=inc.device&&inc.device.name===SET.name&&inc.device.tag!==SET.tag;
     if(!confirm('اطلاعات فایل (از گوشی «'+(inc.device&&inc.device.name||'؟')+'») با اطلاعات این گوشی ادغام شود؟'+(same?'\n⚠️ نام کاربری آن گوشی با این گوشی یکی است؛ بهتر است نام یکی را عوض کنید.':'')))return;
     const S=mergeIn(inc);alert(`ادغام انجام شد.\nجدید: ${P(S.add)} · به‌روزشده: ${P(S.upd)} · حذف‌شده: ${P(S.del)}`+(S.conf.length?'\n\n⚠️ نیاز به بررسی:\n'+S.conf.join('\n'):''));shell()});
   $('#tf').onchange=ev=>go(async()=>{const f=ev.target.files[0];if(!f)return;await api('/api/template','POST',{image:await shrink(f,640)});shell()});
-  if(TPL){const fb=boxEditor();$('#tb').onclick=()=>{SET.tplBox={x:+fb.x.toFixed(4),y:+fb.y.toFixed(4),w:+fb.w.toFixed(4),h:+fb.h.toFixed(4)};SET.tplFit=$('#tfit').value;saveSet();alert('کادر ذخیره شد')}}
+  if(TPL){const fb=boxEditor();$('#tb').onclick=()=>{SET.tplBox={x:+fb.x.toFixed(4),y:+fb.y.toFixed(4),w:+fb.w.toFixed(4),h:+fb.h.toFixed(4)};saveSet();alert('کادر ذخیره شد')}}
   on(v,'data-x',csvOut);
 }
-const VERSION='1.4',BUILD='2026-10-23';
+const VERSION='1.5',BUILD='2026-10-24';
 const verEl=document.createElement('div');verEl.id='ver';verEl.textContent='نسخه '+P(VERSION);verEl.style.cssText='position:fixed;bottom:6px;left:8px;font-size:11px;color:var(--mu);opacity:.85;z-index:3;pointer-events:none';document.body.appendChild(verEl);
 boot();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();

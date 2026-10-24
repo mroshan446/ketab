@@ -298,7 +298,22 @@ function shell(){
   ({books:vBooks,members:vMembers,loans:vLoans,remind:vRemind,hist:vHist,reviews:vReviews,stats:vStats,settings:vSettings})[TAB]();
 }
 const stars=b=>b.rn?`<span class="good">⭐ ${P(b.rating)} (${P(b.rn)} نظر)</span> · `:'';
-const shareBook=b=>{const t=`📚 ${b.name}\n✍️ ${b.author||'—'}${b.publisher?'\n🏢 '+b.publisher:''}\n🏷 ${b.topic||'—'} · ${AGES[b.age]}${b.summary?'\n\n'+b.summary:''}\n\nکد کتاب: ${b.code}`;if(NAT){NAT.shareText(t);return}if(navigator.share){navigator.share({text:t}).catch(()=>{});return}const show=()=>{ov(`<h3>متن معرفی کتاب</h3><div class="mu">متن را انتخاب و کپی کنید:</div><textarea id="shT" rows="9" readonly>${esc(t)}</textarea><button class="btn sec" style="width:100%;margin-top:8px" onclick="cov()">بستن</button>`);$('#shT').select()};try{navigator.clipboard.writeText(t).then(()=>alert('متن کتاب کپی شد'),show)}catch(e){show()}};
+const hashTag=s=>{const t=String(s||'').trim().replace(/[\s\-–—]+/g,'_').replace(/[^\p{L}\p{N}_\u200c]/gu,'').replace(/^_+|_+$/g,'');return t?'#'+t:''};
+function bookText(b){
+  const sm=(b.summary||'').trim(),short=sm.length>520?sm.slice(0,520).replace(/\s+\S*$/,'')+'…':sm;
+  return [`📚 ${b.name}`,b.author?`✍️ نویسنده: ${b.author}`:'',b.publisher?`🏢 ناشر: ${b.publisher}`:'',`🏷 موضوع: ${b.topic||'—'} · ${AGES[b.age]}`,short?'\n'+short:'',`\nکد کتاب: ${b.code}`,'\n'+[hashTag(b.name),hashTag(b.topic)].filter(Boolean).join(' ')].filter(x=>x!=='').join('\n');
+}
+function dataUrlToFile(u,name){const[h,b]=u.split(','),m=/data:([^;]+)/.exec(h)[1],bin=atob(b),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new File([a],name,{type:m})}
+function shareBook(b){
+  const t=bookText(b);
+  if(NAT){if(b.cover&&NAT.shareImage)NAT.shareImage(t,b.cover);else NAT.shareText(t);return}
+  if(navigator.share){
+    if(b.cover&&navigator.canShare){try{const f=dataUrlToFile(b.cover,'cover-'+b.code+'.jpg');if(navigator.canShare({files:[f]})){navigator.share({files:[f],text:t,title:b.name}).catch(()=>{});return}}catch(e){}}
+    navigator.share({text:t}).catch(()=>{});return;
+  }
+  ov(`<h3>متن و تصویر کتاب</h3>${b.cover?`<img src="${b.cover}" style="width:120px;border-radius:6px"><div><a class="btn sec sm" href="${b.cover}" download="cover-${esc(b.code)}.jpg">ذخیرهٔ تصویر</a></div>`:''}<div class="mu" style="margin-top:8px">متن را کپی کنید:</div><textarea id="shT" rows="9" readonly>${esc(t)}</textarea><button class="btn sec" style="width:100%;margin-top:8px" onclick="cov()">بستن</button>`);
+  $('#shT').select();
+}
 async function vBooks(){
   const v=$('#view'),tp=await api('/api/topics');
   v.innerHTML=`<div class="card"><input id="s" placeholder="جستجو: نام کتاب، نویسنده، ناشر یا کد"><div class="row" style="margin-top:8px"><select id="ft"><option value="">همهٔ موضوعات</option>${tp.map(t=>`<option>${esc(t)}</option>`).join('')}</select><select id="fa">${ageOpts('',1)}</select></div></div><button class="btn" id="add" style="width:100%;margin-bottom:10px">+ افزودن کتاب</button><div class="card" id="bl"></div>`;
@@ -306,7 +321,7 @@ async function vBooks(){
     const p=new URLSearchParams({q:$('#s').value,topic:$('#ft').value,age:$('#fa').value});[...p.keys()].forEach(k=>{if(!p.get(k))p.delete(k)});
     const L=await api('/api/books?'+p),by=id=>L.find(b=>b.id==id);
     $('#bl').innerHTML=L.map(b=>`<div class="item"><img class="cv" src="${b.cover||'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDggMTA4Ij48cmVjdCB3aWR0aD0iMTA4IiBoZWlnaHQ9IjEwOCIgcng9IjI0IiBmaWxsPSIjMWY2ZjVjIi8+PHBhdGggZD0iTTU0IDM2QzQ2IDMwIDM0IDI5IDI2IDMyVjcyQzM0IDY5IDQ2IDcwIDU0IDc2WiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik01NCAzNkM2MiAzMCA3NCAyOSA4MiAzMlY3MkM3NCA2OSA2MiA3MCA1NCA3NloiIGZpbGw9IiNlOWYzZWYiLz48cGF0aCBkPSJNMjYgODRIODIiIHN0cm9rZT0iI2YyYzE0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4K'}"><div><b>${esc(b.name)}</b><div class="mu">${esc(b.author||'')}${b.publisher?' · '+esc(b.publisher):''}</div><div class="mu">${esc(b.topic||'بدون موضوع')} · ${AGES[b.age]} · ${esc(b.code)}${b.donor?' · اهداکننده: '+esc(b.donor):''}</div>${b.summary?`<div class="mu">${esc(b.summary.slice(0,90))}${b.summary.length>90?'…':''}</div>`:''}<div>${stars(b)}${b.avail?'<span class="good">موجود</span>':'<span class="bad">در امانت: '+esc(b.holder)+'</span>'}</div>
-    <div style="margin-top:6px"><button class="btn sec sm" data-n="${b.id}">نظرات</button> <button class="btn sec sm" data-e="${b.id}">ویرایش</button> <button class="btn sec sm" data-h="${b.id}">تاریخچه</button> <button class="btn sec sm" data-s="${b.id}">اشتراک‌گذاری</button> ${b.avail?'':`<button class="btn sec sm" data-v="${b.id}">رزرو</button> `}<button class="btn sec sm" data-d="${b.id}">حذف</button></div></div></div>`).join('')||'<div class="mu">کتابی پیدا نشد</div>';
+    <div style="margin-top:6px"><button class="btn sec sm" data-n="${b.id}">نظرات</button> <button class="btn sec sm" data-e="${b.id}">ویرایش</button> <button class="btn sec sm" data-h="${b.id}">تاریخچه</button> <button class="btn sec sm" data-s="${b.id}">ارسال به ایتا</button> ${b.avail?'':`<button class="btn sec sm" data-v="${b.id}">رزرو</button> `}<button class="btn sec sm" data-d="${b.id}">حذف</button></div></div></div>`).join('')||'<div class="mu">کتابی پیدا نشد</div>';
     const bl=$('#bl');
     on(bl,'data-n',id=>showReviews(+id,by(id)));on(bl,'data-e',id=>bookForm(by(id),tp));on(bl,'data-s',id=>shareBook(by(id)));on(bl,'data-h',id=>{HIST={mode:'b',q:by(id).code};TAB='hist';shell()});
     on(bl,'data-d',id=>confirm('کتاب حذف شود؟')&&go(async()=>{await api('/api/books/'+id,'DELETE');shell()}));
@@ -473,7 +488,7 @@ async function vSettings(){
   if(TPL){const fb=boxEditor();$('#tb').onclick=()=>{SET.tplBox={x:+fb.x.toFixed(4),y:+fb.y.toFixed(4),w:+fb.w.toFixed(4),h:+fb.h.toFixed(4)};saveSet();alert('کادر ذخیره شد')}}
   on(v,'data-x',csvOut);
 }
-const VERSION='1.5',BUILD='2026-10-24';
+const VERSION='1.6',BUILD='2026-10-24';
 const verEl=document.createElement('div');verEl.id='ver';verEl.textContent='نسخه '+P(VERSION);verEl.style.cssText='position:fixed;bottom:6px;left:8px;font-size:11px;color:var(--mu);opacity:.85;z-index:3;pointer-events:none';document.body.appendChild(verEl);
 boot();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
